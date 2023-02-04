@@ -1,5 +1,7 @@
 use macroquad::prelude::*;
 use std::collections::HashSet;
+mod flappy_bird;
+use flappy_bird::flappy_bird::flappy_bird_game;
 
 use macroquad::ui::{
     hash, root_ui,
@@ -449,7 +451,9 @@ async fn main() {
             }
             GameState::FlappyBird => {
                 loop {
-                    // Flappy Bird
+                    if !flappy_bird_game().await {
+                        break;
+                    }
                 }
             }
         }
