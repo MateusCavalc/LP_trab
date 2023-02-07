@@ -29,19 +29,20 @@ pub mod flappy_bird{
         life
     }
     
-    fn death_pipe(v1: &Vec2,v2: &Vec2,v3: &Vec2, p: &mut Pipe) -> bool {//Código de colisão com as pipes, se alguma ponta do triângulo tocar no 'pipe' perde
-        let mut life = false;
-    
-        if v1.x > p.x && v1.x < p.x + p.w && v1.y > p.y && v1.y < p.y + p.h {
-            life = true;
-        }else if v2.x > p.x && v2.x < p.x + p.w && v2.y > p.y && v2.y < p.y + p.h {
-            life = true;
-        }else if v3.x > p.x && v3.x < p.x + p.w && v3.y > p.y && v3.y < p.y + p.h {
-            life = true;
-        }
-        life
+    fn death_pipe(bird: &Bird, p: &mut Pipe) -> bool {//Código de colisão com as pipes, se alguma ponta do triângulo tocar no 'pipe' perde
+
+        let closest_x = clamp(bird.pos.x, p.x, p.x + p.w);
+        let closest_y = clamp(bird.pos.y, p.y, p.y + p.h);
+        let distance_x = bird.pos.x - closest_x;
+        let distance_y = bird.pos.y - closest_y;
+        let distance_squared = distance_x * distance_x + distance_y * distance_y;
+        distance_squared < 25.0 * 25.0
     }
+
     pub(crate) async fn flappy_bird_game() -> bool{
+
+        let texture: Texture2D = load_texture("res/cruzeiro.png").await.unwrap();
+
         let mut bird = Bird {//Criação da Bird
             pos: Vec2::new(screen_width() / 2., screen_height() / 2.),
             vel: Vec2::new(0., 0.),
@@ -54,6 +55,7 @@ pub mod flappy_bird{
         ];
         let mut rng = rand::thread_rng(); //Para gerar um número randômico
         let mut gameover = false;//gameover = true => fim de jogo
+        let mut paused = false;//paused = true => pausa jogo
         let mut contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
         let mut pontuacao = 0;//pontuacao do jogador
         let mut dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
@@ -80,6 +82,14 @@ pub mod flappy_bird{
                     font_size,
                     DARKGRAY,
                 );
+                let text2 = "Aperte [q] para voltar ao menu";
+                draw_text(
+                    text2,
+                    screen_width() / 2. - text_size.width,
+                    screen_height() / 2. - text_size.height / 2. + 80.,
+                    font_size,
+                    DARKGRAY,
+                );
                 if is_key_down(KeyCode::Enter) {//Após perder o jogo, se apertar enter,reseta as variáveis
                     bird = Bird {
                         pos: Vec2::new(screen_width() / 2., screen_height() / 2.),
@@ -97,17 +107,61 @@ pub mod flappy_bird{
                     pontuacao = 0;
                     dificuldade = 1.5;
                 }
-                if is_key_down(KeyCode::Escape) {
+                if is_key_down(KeyCode::Q) {
                     return false;
+                }
+                next_frame().await;
+                continue;
+            }
+
+            if paused { //Se está pausado
+                clear_background(LIGHTGRAY);
+                let text = &format!("Você está com {} pontos.", pontuacao);
+                let font_size = 30.;
+                let text_size = measure_text(text, None, font_size as _, 1.0);
+                draw_text(
+                    text,
+                    screen_width() / 2. - text_size.width / 2.,
+                    screen_height() / 2. - text_size.height / 2.,
+                    font_size,
+                    DARKGRAY,
+                );
+                let text2 = "Aperte [esc] para continuar";
+                draw_text(
+                    text2,
+                    screen_width() / 2. - text_size.width,
+                    screen_height() / 2. - text_size.height / 2. + 50.,
+                    font_size,
+                    DARKGRAY,
+                );
+                let text2 = "Aperte [q] para voltar ao menu";
+                draw_text(
+                    text2,
+                    screen_width() / 2. - text_size.width,
+                    screen_height() / 2. - text_size.height / 2. + 80.,
+                    font_size,
+                    DARKGRAY,
+                );
+                if is_key_pressed(KeyCode::Q) {
+                    return false;
+                }
+                if is_key_pressed(KeyCode::Escape) {
+                    paused = false;
                 }
                 next_frame().await;
                 continue;
             }
     
             let mut acc = -bird.vel / 100.; // Fricçãi
+
+            if is_key_pressed(KeyCode::Escape) {
+                paused = true;
+                next_frame().await;
+                continue;
+            }
     
             // Pulo
-            if is_key_down(KeyCode::Space) {
+            if is_key_pressed(KeyCode::Space) {
                 acc = Vec2::new(0., -15.);
             }
             
@@ -134,8 +188,6 @@ pub mod flappy_bird{
                 }
             }
     
-    
-    
             clear_background(LIGHTGRAY);
     
             let text = &format!("{}",pontuacao);//Mostrar pontuação
@@ -148,21 +200,18 @@ pub mod flappy_bird{
                 RED,
             );
     
-            //3 pontas do triângulo do Bird
-            let v1 = Vec2::new(
-                bird.pos.x - BIRD_HEIGHT / 2. ,
-                bird.pos.y  + BIRD_BASE / 2. ,
+            draw_circle_lines(bird.pos.x, bird.pos.y, 26., 2., BLACK);
+
+            draw_texture_ex(
+                texture,
+                bird.pos.x - 25.0,
+                bird.pos.y - 25.0,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(Vec2::new(50., 50.)),
+                    ..Default::default()
+                },
             );
-            let v2 = Vec2::new(
-                bird.pos.x -  BIRD_HEIGHT / 2. ,
-                bird.pos.y -  BIRD_BASE / 2. ,
-            );
-            let v3 = Vec2::new(
-                bird.pos.x + BIRD_HEIGHT / 2.,
-                bird.pos.y ,
-            );
-    
-            draw_triangle_lines(v1, v2, v3, 2., BLACK);
     
             let pipes_iter = pipes.iter_mut();//iterar todos os pipes
             let mut gameover_pipes = false;//variável para ajudar em dar o gameover
@@ -175,7 +224,7 @@ pub mod flappy_bird{
             for p in pipes_iter {//desenhar os pipes, fazer eles irem paa esquerda e também colisão do pipe com o bird
                 p.x = p.x - dificuldade as f32;
                 draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
-                gameover_pipes = death_pipe(&v1,&v2,&v3,p);
+                gameover_pipes = death_pipe(&bird ,p);
                 if gameover_pipes {
                     break;
                 }

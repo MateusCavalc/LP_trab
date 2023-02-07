@@ -448,6 +448,7 @@ async fn main() {
                             break;
                         }
                 }
+                game_state = GameState::Menu;
             }
             GameState::FlappyBird => {
                 loop {
@@ -455,6 +456,7 @@ async fn main() {
                         break;
                     }
                 }
+                game_state = GameState::Menu;
             }
         }
 
