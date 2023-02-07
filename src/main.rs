@@ -451,6 +451,21 @@ async fn main() {
                 game_state = GameState::Menu;
             }
             GameState::FlappyBird => {
+                clear_background(WHITE);
+
+                let text = "Carregando ...";
+                let font_size = 30.;
+                let text_size = measure_text(text, None, font_size as _, 1.0);
+                draw_text(
+                    text,
+                    screen_width() / 2. - text_size.width / 2.,
+                    screen_height() / 2. - text_size.height / 2.,
+                    font_size,
+                    BLACK,
+                );
+
+                next_frame().await;
+
                 loop {
                     if !flappy_bird_game().await {
                         break;
