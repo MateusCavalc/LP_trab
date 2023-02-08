@@ -36,7 +36,7 @@ pub mod flappy_bird{
         let distance_x = bird.pos.x - closest_x;
         let distance_y = bird.pos.y - closest_y;
         let distance_squared = distance_x * distance_x + distance_y * distance_y;
-        distance_squared < 25.0 * 25.0
+        distance_squared < 40. * 40.
     }
 
     pub(crate) async fn flappy_bird_game() -> bool{
@@ -45,6 +45,7 @@ pub mod flappy_bird{
         let cruzeiro_texture: Texture2D = load_texture("res/cruzeiro.png").await.unwrap();
         let campo_texture: Texture2D = load_texture("res/campo.png").await.unwrap();
         let galo_campeao_texture: Texture2D = load_texture("res/galo_campeao.png").await.unwrap();
+        let galo_logo_texture: Texture2D = load_texture("res/galo_logo.png").await.unwrap();
         let rounded_box_texture: Texture2D = load_texture("res/rounded_box.png").await.unwrap();
 
         let mut bird = Bird {//Criação da Bird
@@ -52,10 +53,10 @@ pub mod flappy_bird{
             vel: Vec2::new(0., 0.),
         };
         let mut pipes: Vec<Pipe> = vec![//Criação Inicial dos Pipes(duas duplas de pipes)
-            Pipe {x: screen_width(), y: 0.0, w: 50.0, h: 200.0},
-            Pipe {x: screen_width(), y: screen_height()-75., w: 50.0, h: 75.0},
-            Pipe {x: screen_width()+200., y: 0.0, w: 50.0, h: 200.0},
-            Pipe {x: screen_width()+200., y: screen_height()-75., w: 50.0, h: 75.0},
+            Pipe {x: screen_width(), y: 0.0, w: 100.0, h: 200.0},
+            Pipe {x: screen_width(), y: screen_height()-75., w: 100.0, h: 75.0},
+            Pipe {x: screen_width()+200., y: 0.0, w: 100.0, h: 200.0},
+            Pipe {x: screen_width()+200., y: screen_height()-75., w: 100.0, h: 75.0},
         ];
         let mut rng = rand::thread_rng(); //Para gerar um número randômico
         let mut gameover = false;//gameover = true => fim de jogo
@@ -92,7 +93,7 @@ pub mod flappy_bird{
                     },
                 );
 
-                let text = &format!("Voce fez {} pontos.",pontuacao);
+                let text = &format!("Voce fez {} pontos",pontuacao);
                 let font_size = 30.;
                 let text_size = measure_text(text, None, font_size as _, 1.0);
                 draw_text(
@@ -124,10 +125,10 @@ pub mod flappy_bird{
                         vel: Vec2::new(0., 0.),
                     };
                     pipes = vec![
-                        Pipe {x: screen_width(), y: 0.0, w: 50.0, h: 200.0},
-                        Pipe {x: screen_width(), y: screen_height()-75., w: 50.0, h: 75.0},
-                        Pipe {x: screen_width()+200., y: 0.0, w: 50.0, h: 200.0},
-                        Pipe {x: screen_width()+200., y: screen_height()-75., w: 50.0, h: 75.0},
+                        Pipe {x: screen_width(), y: 0.0, w: 100.0, h: 200.0},
+                        Pipe {x: screen_width(), y: screen_height()-75., w: 100.0, h: 75.0},
+                        Pipe {x: screen_width()+200., y: 0.0, w: 100.0, h: 200.0},
+                        Pipe {x: screen_width()+200., y: screen_height()-75., w: 100.0, h: 75.0},
                     ];
                     rng = rand::thread_rng();
                     gameover = false;
@@ -155,24 +156,25 @@ pub mod flappy_bird{
             );
     
             let text = &format!("{}",pontuacao);//Mostrar pontuação
-            let font_size = 60.;
+            let font_size = 90.;
             draw_text(
                 text,
-                screen_width()/2.  - 150.,
-                screen_height()/2. - 150.,
+                screen_width()/2.  - 200.,
+                screen_height()/2. - 50.,
                 font_size,
                 RED,
             );
     
-            draw_circle_lines(bird.pos.x, bird.pos.y, 26., 2., BLACK);
+            // draw_circle_lines(bird.pos.x, bird.pos.y, 41., 2., BLACK);
 
+            // Desenha logo cruzeiro
             draw_texture_ex(
                 cruzeiro_texture,
-                bird.pos.x - 25.0,
-                bird.pos.y - 25.0,
+                bird.pos.x - 40.0,
+                bird.pos.y - 40.0,
                 WHITE,
                 DrawTextureParams {
-                    dest_size: Some(Vec2::new(50., 50.)),
+                    dest_size: Some(Vec2::new(80., 80.)),
                     ..Default::default()
                 },
             );
@@ -180,35 +182,58 @@ pub mod flappy_bird{
             let pipes_iter = pipes.iter();//iterar todos os pipes
 
             for p in pipes_iter {//desenhar os pipes, fazer eles irem paa esquerda e também colisão do pipe com o bird
-                draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
+                // draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
+
+                // Desenha pipe do galo
+                draw_texture_ex(
+                    galo_logo_texture,
+                    p.x,
+                    p.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(Vec2::new(p.w, p.h)),
+                        ..Default::default()
+                    },
+                );
             }
 
             if paused { //Se está pausado
+                let text = "PAUSADO";
+                let font_size = 60.;
+                let text_size = measure_text(text, None, font_size as _, 1.0);
+                draw_text(
+                    text,
+                    screen_width() / 4. - text_size.width / 2.,
+                    screen_height() / 5. - text_size.height / 2.,
+                    font_size,
+                    WHITE,
+                );
+
                 let text = &format!("Você está com {} pontos.", pontuacao);
                 let font_size = 30.;
                 let text_size = measure_text(text, None, font_size as _, 1.0);
                 draw_text(
                     text,
-                    screen_width() / 2. - text_size.width / 2.,
-                    screen_height() / 2. - text_size.height / 2.,
+                    screen_width() / 4. - text_size.width / 2.,
+                    screen_height() * 3. / 4. - text_size.height / 2.,
                     font_size,
-                    DARKGRAY,
+                    WHITE,
                 );
                 let text2 = "Aperte [esc] para continuar";
                 draw_text(
                     text2,
-                    screen_width() / 2. - text_size.width,
-                    screen_height() / 2. - text_size.height / 2. + 50.,
+                    screen_width() / 4. - text_size.width / 2.,
+                    screen_height() * 3. / 4. - text_size.height / 2. + 50.,
                     font_size,
-                    DARKGRAY,
+                    WHITE,
                 );
                 let text2 = "Aperte [q] para voltar ao menu";
                 draw_text(
                     text2,
-                    screen_width() / 2. - text_size.width,
-                    screen_height() / 2. - text_size.height / 2. + 80.,
+                    screen_width() / 4. - text_size.width / 2.,
+                    screen_height() * 3. / 4. - text_size.height / 2. + 80.,
                     font_size,
-                    DARKGRAY,
+                    WHITE,
                 );
                 if is_key_pressed(KeyCode::Q) {
                     return false;
@@ -261,7 +286,20 @@ pub mod flappy_bird{
 
             for p in pipes_iter_mut {//desenhar os pipes, fazer eles irem paa esquerda e também colisão do pipe com o bird
                 p.x = p.x - dificuldade as f32;
-                draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
+                // draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
+
+                // Desenha pipe do galo
+                draw_texture_ex(
+                    galo_logo_texture,
+                    p.x,
+                    p.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(Vec2::new(p.w, p.h)),
+                        ..Default::default()
+                    },
+                );
+
                 gameover_pipes = death_pipe(&bird ,p);
                 if gameover_pipes {
                     break;
@@ -277,11 +315,11 @@ pub mod flappy_bird{
             if pipes[0].x < bird.pos.x - 80. || pipes[1].x < bird.pos.x - 80. || pipes[2].x < bird.pos.x - 80. || pipes[3].x < bird.pos.x - 80. {
                 let valor = rng.gen_range(0..((screen_height() as i64/2)-50));
                 if contador % 2 == 0 {
-                    pipes[0] = Pipe {x: screen_width(), y: 0.0, w: 50.0, h: valor as f32};
-                    pipes[1] = Pipe {x: screen_width(), y: screen_height() + valor as f32-distancia_pipe, w: 50.0, h: -valor as f32 + distancia_pipe};
+                    pipes[0] = Pipe {x: screen_width(), y: 0.0, w: 100.0, h: valor as f32};
+                    pipes[1] = Pipe {x: screen_width(), y: screen_height() + valor as f32-distancia_pipe, w: 100.0, h: -valor as f32 + distancia_pipe};
                 }else{
-                    pipes[2] = Pipe {x: screen_width(), y: 0.0, w: 50.0, h: valor as f32};
-                    pipes[3] = Pipe {x: screen_width(), y: screen_height() + valor as f32-distancia_pipe, w: 50.0, h: -valor as f32 + distancia_pipe};
+                    pipes[2] = Pipe {x: screen_width(), y: 0.0, w: 100.0, h: valor as f32};
+                    pipes[3] = Pipe {x: screen_width(), y: screen_height() + valor as f32-distancia_pipe, w: 100.0, h: -valor as f32 + distancia_pipe};
                 }
                 contador+=1;
                 pontuacao+=1;
