@@ -53,10 +53,10 @@ pub mod flappy_bird{
             vel: Vec2::new(0., 0.),
         };
         let mut pipes: Vec<Pipe> = vec![//Criação Inicial dos Pipes(duas duplas de pipes)
-            Pipe {x: screen_width(), y: 0.0, w: 100.0, h: 200.0},
-            Pipe {x: screen_width(), y: screen_height()-75., w: 100.0, h: 75.0},
-            Pipe {x: screen_width()+200., y: 0.0, w: 100.0, h: 200.0},
-            Pipe {x: screen_width()+200., y: screen_height()-75., w: 100.0, h: 75.0},
+            Pipe {x: screen_width(), y: 0.0-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width(), y: screen_height()-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+200., y: 0.0-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+200., y: screen_height()-200.+40., w: 100.0, h: 300.0},
         ];
         let mut rng = rand::thread_rng(); //Para gerar um número randômico
         let mut gameover = false;//gameover = true => fim de jogo
@@ -64,7 +64,7 @@ pub mod flappy_bird{
         let mut contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
         let mut pontuacao = 0;//pontuacao do jogador
         let mut dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
-        let distancia_pipe = 350.;//quanto maior,menor a distância
+        let distancia_pipe = 50.;//quanto maior,menor a distância
         let vel_pipe_baixo = 0.5;//velocidade do pipe de ir para baixo e para cima quando passar de 20/40 pontos
         loop {
             if gameover { //Se perder  o jogo
@@ -125,10 +125,10 @@ pub mod flappy_bird{
                         vel: Vec2::new(0., 0.),
                     };
                     pipes = vec![
-                        Pipe {x: screen_width(), y: 0.0, w: 100.0, h: 200.0},
-                        Pipe {x: screen_width(), y: screen_height()-75., w: 100.0, h: 75.0},
-                        Pipe {x: screen_width()+200., y: 0.0, w: 100.0, h: 200.0},
-                        Pipe {x: screen_width()+200., y: screen_height()-75., w: 100.0, h: 75.0},
+                        Pipe {x: screen_width(), y: 0.0-10., w: 100.0, h: 300.0},
+            Pipe {x: screen_width(), y: screen_height()-10., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+200., y: 0.0-10., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+200., y: screen_height()-10., w: 100.0, h: 300.0},
                     ];
                     rng = rand::thread_rng();
                     gameover = false;
@@ -260,8 +260,8 @@ pub mod flappy_bird{
             
             acc.y += 0.5;//gravidade
             bird.vel += acc;
-            if bird.vel.length() > 5. {
-                bird.vel = bird.vel.normalize() * 5.;
+            if bird.vel.length() > 10. {
+                bird.vel = bird.vel.normalize() * 10.;
             }
             bird.pos += bird.vel;
     
@@ -313,13 +313,13 @@ pub mod flappy_bird{
     
             //Geração de Novos Pipes, modifica os Pipes Originais para voltarem pro lado direito, funciona bem na tela pequena, tela grande fica ruim
             if pipes[0].x < bird.pos.x - 80. || pipes[1].x < bird.pos.x - 80. || pipes[2].x < bird.pos.x - 80. || pipes[3].x < bird.pos.x - 80. {
-                let valor = rng.gen_range(0..((screen_height() as i64/2)-50));
+                let mut valor = rng.gen_range(0..(screen_height() as i64/2)+40);
                 if contador % 2 == 0 {
-                    pipes[0] = Pipe {x: screen_width(), y: 0.0, w: 100.0, h: valor as f32};
-                    pipes[1] = Pipe {x: screen_width(), y: screen_height() + valor as f32-distancia_pipe, w: 100.0, h: -valor as f32 + distancia_pipe};
+                    pipes[0] = Pipe {x: screen_width(), y: 0.0 - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
+                    pipes[1] = Pipe {x: screen_width(), y: screen_height() - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
                 }else{
-                    pipes[2] = Pipe {x: screen_width(), y: 0.0, w: 100.0, h: valor as f32};
-                    pipes[3] = Pipe {x: screen_width(), y: screen_height() + valor as f32-distancia_pipe, w: 100.0, h: -valor as f32 + distancia_pipe};
+                    pipes[2] = Pipe {x: screen_width(), y: 0.0 - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
+                    pipes[3] = Pipe {x: screen_width(), y: screen_height() - valor as f32 - distancia_pipe+ 40., w: 100.0, h: 300.};
                 }
                 contador+=1;
                 pontuacao+=1;
