@@ -17,6 +17,13 @@ pub mod flappy_bird{
         w: f32,
         h: f32,
     }
+
+    struct Trophy {
+        x: f32,
+        y: f32,
+        w: f32,
+        h: f32,
+    }
     
     fn death_screen(v: &Vec2) -> bool {//Código para GameOver se tocar embaixo ou emcima da Tela
         let mut life = false;
@@ -39,14 +46,26 @@ pub mod flappy_bird{
         distance_squared < 40. * 40.
     }
 
+    fn hit_trophy(bird: &Bird, p: &mut Trophy) -> bool {//Código de colisão com as pipes, se alguma ponta do triângulo tocar no 'pipe' perde
+
+        let closest_x = clamp(bird.pos.x, p.x, p.x + p.w);
+        let closest_y = clamp(bird.pos.y, p.y, p.y + p.h);
+        let distance_x = bird.pos.x - closest_x;
+        let distance_y = bird.pos.y - closest_y;
+        let distance_squared = distance_x * distance_x + distance_y * distance_y;
+        distance_squared < 40. * 40.
+    }
+
     pub(crate) async fn flappy_bird_game() -> bool{
 
         // Textures
         let cruzeiro_texture: Texture2D = load_texture("res/cruzeiro.png").await.unwrap();
         let campo_texture: Texture2D = load_texture("res/campo.png").await.unwrap();
         let galo_campeao_texture: Texture2D = load_texture("res/galo_campeao.png").await.unwrap();
+        let cruzeiro_campeao_texture: Texture2D = load_texture("res/cruzeiro_campeao.png").await.unwrap();
         let galo_logo_texture: Texture2D = load_texture("res/galo_logo.png").await.unwrap();
         let rounded_box_texture: Texture2D = load_texture("res/rounded_box.png").await.unwrap();
+        let trofeu_texture: Texture2D = load_texture("res/trofeu.png").await.unwrap();
 
         let mut bird = Bird {//Criação da Bird
             pos: Vec2::new(screen_width() / 2., screen_height() / 2.),
@@ -58,28 +77,44 @@ pub mod flappy_bird{
             Pipe {x: screen_width()+200., y: 0.0-200.+40., w: 100.0, h: 300.0},
             Pipe {x: screen_width()+200., y: screen_height()-200.+40., w: 100.0, h: 300.0},
         ];
+        let mut trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
         let mut rng = rand::thread_rng(); //Para gerar um número randômico
         let mut gameover = false;//gameover = true => fim de jogo
+        let mut winner = false;
         let mut paused = false;//paused = true => pausa jogo
         let mut contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
         let mut pontuacao = 0;//pontuacao do jogador
         let mut dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
-        let distancia_pipe = 50.;//quanto maior,menor a distância
+        let distancia_pipe = 70.;//quanto maior,menor a distância
         let vel_pipe_baixo = 0.5;//velocidade do pipe de ir para baixo e para cima quando passar de 20/40 pontos
         loop {
             if gameover { //Se perder  o jogo
                 
                 // Desenha galo campeao
-                draw_texture_ex(
-                    galo_campeao_texture,
-                    0.0,
-                    0.0,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(vec2(screen_width(), screen_height())),
-                        ..Default::default()
-                    },
-                );
+                if winner == false {
+                    draw_texture_ex(
+                        galo_campeao_texture,
+                        0.0,
+                        0.0,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(screen_width(), screen_height())),
+                            ..Default::default()
+                        },
+                    );
+                }else{
+                    draw_texture_ex(
+                        cruzeiro_campeao_texture,
+                        0.0,
+                        0.0,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(screen_width(), screen_height())),
+                            ..Default::default()
+                        },
+                    );
+                }
+        
 
                 // Desenha caixa para texto
                 draw_texture_ex(
@@ -125,16 +160,20 @@ pub mod flappy_bird{
                         vel: Vec2::new(0., 0.),
                     };
                     pipes = vec![
-                        Pipe {x: screen_width(), y: 0.0-10., w: 100.0, h: 300.0},
-            Pipe {x: screen_width(), y: screen_height()-10., w: 100.0, h: 300.0},
-            Pipe {x: screen_width()+200., y: 0.0-10., w: 100.0, h: 300.0},
-            Pipe {x: screen_width()+200., y: screen_height()-10., w: 100.0, h: 300.0},
+                        Pipe {x: screen_width(), y: 0.0-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width(), y: screen_height()-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+200., y: 0.0-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+200., y: screen_height()-200.+40., w: 100.0, h: 300.0},
                     ];
                     rng = rand::thread_rng();
-                    gameover = false;
-                    contador = 0;
-                    pontuacao = 0;
-                    dificuldade = 1.5;
+                    trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
+                    rng = rand::thread_rng(); //Para gerar um número randômico
+                    gameover = false;//gameover = true => fim de jogo
+                    winner = false;
+                    paused = false;//paused = true => pausa jogo
+                    contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
+                    pontuacao = 0;//pontuacao do jogador
+                    dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
                 }
                 if is_key_down(KeyCode::Q) {
                     return false;
@@ -287,7 +326,6 @@ pub mod flappy_bird{
             for p in pipes_iter_mut {//desenhar os pipes, fazer eles irem paa esquerda e também colisão do pipe com o bird
                 p.x = p.x - dificuldade as f32;
                 // draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
-
                 // Desenha pipe do galo
                 draw_texture_ex(
                     galo_logo_texture,
@@ -312,7 +350,7 @@ pub mod flappy_bird{
             }
     
             //Geração de Novos Pipes, modifica os Pipes Originais para voltarem pro lado direito, funciona bem na tela pequena, tela grande fica ruim
-            if pipes[0].x < bird.pos.x - 80. || pipes[1].x < bird.pos.x - 80. || pipes[2].x < bird.pos.x - 80. || pipes[3].x < bird.pos.x - 80. {
+            if (pipes[0].x < bird.pos.x - 80. || pipes[1].x < bird.pos.x - 80. || pipes[2].x < bird.pos.x - 80. || pipes[3].x < bird.pos.x - 80.) && pontuacao <= 1 {
                 let mut valor = rng.gen_range(0..(screen_height() as i64/2)+40);
                 if contador % 2 == 0 {
                     pipes[0] = Pipe {x: screen_width(), y: 0.0 - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
@@ -323,9 +361,23 @@ pub mod flappy_bird{
                 }
                 contador+=1;
                 pontuacao+=1;
+            } 
+            if pontuacao >= 2{
+                trofeu.x -= 1.;
+                draw_texture_ex(
+                    trofeu_texture,
+                    trofeu.x,
+                    trofeu.y,
+                    WHITE,
+                    DrawTextureParams {
+                        dest_size: Some(Vec2::new(trofeu.w, trofeu.h)),
+                        ..Default::default()
+                    },
+                );
+                winner = hit_trophy(&bird ,&mut trofeu);
             }
     
-            gameover = death_screen(&bird.pos) || gameover_pipes;//gameover
+            gameover = death_screen(&bird.pos) || gameover_pipes || winner;//gameover
             next_frame().await
         }
     }
