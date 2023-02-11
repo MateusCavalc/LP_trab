@@ -9,22 +9,22 @@ use macroquad::ui::{
     Drag, Ui, Skin
 };
 
-const SHIP_HEIGHT: f32 = 25.;
-const SHIP_BASE: f32 = 22.;
+const SHIP_HEIGHT: f32 = 37.;
+const SHIP_BASE: f32 = 30.;
 const SHIP_LINE_THICKNESS: f32 = 2.;
 const SHIP_ROTATION_SPEED: f32 = 5.;
 const SHIP_MOVING_SPEED: f32 = 4.;
 const SHEILD_SIZE: f32 = 28.;
 const SHEILD_LINE_THICKNESS: f32 = 5.;
 
-const ASTEROID_COUNT: u8 = 1;
+const ASTEROID_COUNT: u8 = 3;
 const ASTEROID_LINE_THICKNESS: f32 = 2.;
 
 const BULLET_SIZE: f32 = 2.;
 const BULLET_RANGE: f64 = 0.125;
 const BULLET_DELAY: f64 = 0.0;
 
-const BACKGROUND_COLOR: Color = BLACK;
+const BACKGROUND_COLOR: Color = WHITE;
 const SHIP_COLOR: Color = LIME;
 const SHEILD_COLOR: Color = GOLD;
 const ASTEROID_COLOR: Color = LIGHTGRAY;
@@ -105,31 +105,42 @@ impl Ship {
         }
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self,logo: Texture2D) {
         let rotation = self.rotation.to_radians();
 
-        let v1 = Vec2::new(
-            self.position.x + (rotation.sin() * SHIP_HEIGHT / 2.),
-            self.position.y - (rotation.cos() * SHIP_HEIGHT / 2.),
-        );
+        //let v1 = Vec2::new(
+        //    self.position.x + (rotation.sin() * SHIP_HEIGHT / 2.),
+        //    self.position.y - (rotation.cos() * SHIP_HEIGHT / 2.),
+        //);
 
-        let v2 = Vec2::new(
-            self.position.x
-                - (rotation.cos() * SHIP_BASE / 2.)
-                - (rotation.sin() * SHIP_HEIGHT / 2.),
-            self.position.y - (rotation.sin() * SHIP_BASE / 2.)
-                + (rotation.cos() * SHIP_HEIGHT / 2.),
-        );
+        //let v2 = Vec2::new(
+        //    self.position.x
+        //        - (rotation.cos() * SHIP_BASE / 2.)
+        //        - (rotation.sin() * SHIP_HEIGHT / 2.),
+        //    self.position.y - (rotation.sin() * SHIP_BASE / 2.)
+        //        + (rotation.cos() * SHIP_HEIGHT / 2.),
+        //);
 
-        let v3 = Vec2::new(
-            self.position.x + (rotation.cos() * SHIP_BASE / 2.)
-                - (rotation.sin() * SHIP_HEIGHT / 2.),
-            self.position.y
-                + (rotation.sin() * SHIP_BASE / 2.)
-                + (rotation.cos() * SHIP_HEIGHT / 2.),
-        );
+        //let v3 = Vec2::new(
+        //    self.position.x + (rotation.cos() * SHIP_BASE / 2.)
+        //        - (rotation.sin() * SHIP_HEIGHT / 2.),
+        //    self.position.y
+        //        + (rotation.sin() * SHIP_BASE / 2.)
+        //        + (rotation.cos() * SHIP_HEIGHT / 2.),
+        //);
 
-        draw_triangle_lines(v1, v2, v3, SHIP_LINE_THICKNESS, SHIP_COLOR);
+        //draw_triangle_lines(v1, v2, v3, SHIP_LINE_THICKNESS, SHIP_COLOR);
+        draw_texture_ex(
+            logo,
+            self.position.x,
+            self.position.y,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(Vec2::new(30., 37.)),
+                rotation: self.rotation.to_radians(),
+                ..Default::default()
+            },
+        );
 
         self.bullets.iter_mut().for_each(|b| b.update());
         self.bullets.iter_mut().for_each(|b| b.draw());
@@ -216,7 +227,7 @@ impl Bullet {
     }
 
     fn draw(&self) {
-        draw_circle(self.position.x, self.position.y, BULLET_SIZE, BULLET_COLOR);
+        draw_circle(self.position.x + SHIP_BASE/2., self.position.y + SHIP_HEIGHT/2., BULLET_SIZE, BULLET_COLOR);
     }
 
     fn update(&mut self) {
@@ -238,8 +249,10 @@ impl Asteroid {
     fn new() -> Asteroid {
         Asteroid {
             position: Vec2::new(
-                rand::gen_range(35.0, screen_width() - 36.),
-                rand::gen_range(35.0, screen_height() - 36.),
+               // rand::gen_range(35.0, screen_width() - 36.),
+               // rand::gen_range(35.0, screen_height() - 36.),
+               0.,
+               0.
             ),
             sides: rand::gen_range(12, 24),
             size: 100.,
@@ -247,21 +260,34 @@ impl Asteroid {
         }
     }
 
-    fn draw(&self) {
+    fn draw(&self, logo: Texture2D) {
         /* 12 - 25
          * 9 - 12
          * 6 - 9
          * 3 - 6
          */
-        draw_poly_lines(
+        //draw_poly_lines(
+        //    self.position.x,
+        //    self.position.y,
+        //    self.sides,
+        //    self.size,
+        //    self.rotation,
+        //    ASTEROID_LINE_THICKNESS,
+        //    ASTEROID_COLOR,
+        //)
+
+        draw_texture_ex(
+            logo,
             self.position.x,
             self.position.y,
-            self.sides,
-            self.size,
-            self.rotation,
-            ASTEROID_LINE_THICKNESS,
-            ASTEROID_COLOR,
-        )
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(Vec2::new(self.size, self.size)),
+                rotation: self.rotation.to_radians(),
+                ..Default::default()
+            },
+        );
+
     }
 
     fn collided(&self, position: &Vec2) -> bool {
@@ -516,6 +542,8 @@ async fn play() -> bool {
     let mut ship = Ship::new();
     let mut asteroids: Vec<_> = (0..ASTEROID_COUNT).map(|_| Asteroid::new()).collect();
     let mut did_win = true;
+    let cruzeiro_logo: Texture2D = load_texture("res/cruzeiro-logo.png").await.unwrap();
+    let atletico_logo: Texture2D = load_texture("res/atletico-logo.png").await.unwrap();
 
     loop {
         if is_key_down(KeyCode::Escape) {
@@ -587,9 +615,9 @@ async fn play() -> bool {
             }
         }
 
-        ship.draw();
+        ship.draw(cruzeiro_logo);
         ship.mv();
-        asteroids.iter().for_each(|a| a.draw());
+        asteroids.iter().for_each(|a| a.draw(atletico_logo));
         asteroids.iter_mut().for_each(|a| a.mv());
 
         next_frame().await;
