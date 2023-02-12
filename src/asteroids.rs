@@ -3,8 +3,8 @@ pub mod asteroids{
     use std::collections::HashSet;
     use macroquad::rand::gen_range;
 
-    const SHIP_HEIGHT: f32 = 37.;
-    const SHIP_BASE: f32 = 30.;
+    const SHIP_HEIGHT: f32 = 50.;
+    const SHIP_BASE: f32 = 62.5;
     const SHIP_LINE_THICKNESS: f32 = 2.;
     const SHIP_ROTATION_SPEED: f32 = 5.;
     const SHIP_MOVING_SPEED: f32 = 4.;
@@ -19,7 +19,7 @@ pub mod asteroids{
     const BULLET_DELAY: f64 = 0.1;
 
     const BACKGROUND_COLOR: Color = WHITE;
-    const SHIP_COLOR: Color = LIME;
+    const SHIP_COLOR: Color = RED;
     const SHIELD_COLOR: Color = GOLD;
     const ASTEROID_COLOR: Color = LIGHTGRAY;
     const BULLET_COLOR: Color = RED;
@@ -75,7 +75,7 @@ pub mod asteroids{
             draw_texture_ex(
                 ship_logo,
                 self.position.x - 25.,
-                self.position.y - 25.,
+                self.position.y - 31.25,
                 WHITE,
                 DrawTextureParams {
                     dest_size: Some(Vec2::new(50., 62.5)),
@@ -83,9 +83,11 @@ pub mod asteroids{
                     ..Default::default()
                 },
             );
+            draw_circle(self.position.x,self.position.y,1.,SHIP_COLOR);
+            let rotation_ship = self.rotation;
     
             self.bullets.iter_mut().for_each(|b| b.update());
-            self.bullets.iter_mut().for_each(|b| b.draw(bullet_logo));
+            self.bullets.iter_mut().for_each(|b| b.draw(bullet_logo,rotation_ship));
             // range of bullets
             self.bullets
                 .retain(|b| get_time() - b.time_shot_out < BULLET_RANGE && !b.collided);
@@ -175,17 +177,17 @@ pub mod asteroids{
             }
         }
     
-        fn draw(&mut self, logo: Texture2D) {
+        fn draw(&mut self, logo: Texture2D, rot: f32) {
             // draw_circle(self.position.x + SHIP_BASE/2., self.position.y + SHIP_HEIGHT/2., BULLET_SIZE, BULLET_COLOR);
 
             draw_texture_ex(
                 logo,
-                self.position.x + SHIP_BASE/2. - (5.),
-                self.position.y + SHIP_HEIGHT/2. - (5.),
+                self.position.x ,
+                self.position.y - SHIP_HEIGHT/2.,
                 WHITE,
                 DrawTextureParams {
                     dest_size: Some(Vec2::new(10., 10.)),
-                    rotation: self.rotation.to_radians(),
+                    rotation: rot.to_radians(),
                     ..Default::default()
                 },
             );
@@ -253,7 +255,7 @@ pub mod asteroids{
         }
     
         fn collided(&self, position: &Vec2) -> bool {
-            if (self.position - *position).length() < self.size {
+            if (self.position - *position).length() < self.size{
                 return true;
             }
             false

@@ -71,7 +71,7 @@ pub enum GameState {
 fn window_conf() -> Conf {
     Conf {
       window_title: "LP Game Emulator".to_owned(),
-      window_width: 1200,
+      window_width: 1000,
       window_height: 600,
       high_dpi: true,
       window_resizable: false,

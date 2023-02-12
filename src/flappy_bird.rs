@@ -130,8 +130,8 @@ pub mod flappy_bird{
         let mut pipes: Vec<Pipe> = vec![//Criação Inicial dos Pipes(duas duplas de pipes)
             Pipe {x: screen_width(), y: 0.0-200.+40., w: 100.0, h: 300.0},
             Pipe {x: screen_width(), y: screen_height()-200.+40., w: 100.0, h: 300.0},
-            Pipe {x: screen_width()+200., y: 0.0-200.+40., w: 100.0, h: 300.0},
-            Pipe {x: screen_width()+200., y: screen_height()-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+250., y: 0.0-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+250., y: screen_height()-200.+40., w: 100.0, h: 300.0},
         ];
         let mut trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
         let mut rng = rand::thread_rng(); //Para gerar um número randômico
@@ -141,6 +141,7 @@ pub mod flappy_bird{
         let mut contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
         let mut pontuacao = 0;//pontuacao do jogador
         let mut dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
+        let pontuacao_max = 4;//quanto maior,menor a distância
         let distancia_pipe = 70.;//quanto maior,menor a distância
         let vel_pipe_baixo = 0.5;//velocidade do pipe de ir para baixo e para cima quando passar de 20/40 pontos
         loop {
@@ -218,8 +219,8 @@ pub mod flappy_bird{
                     pipes = vec![
                         Pipe {x: screen_width(), y: 0.0-200.+40., w: 100.0, h: 300.0},
             Pipe {x: screen_width(), y: screen_height()-200.+40., w: 100.0, h: 300.0},
-            Pipe {x: screen_width()+200., y: 0.0-200.+40., w: 100.0, h: 300.0},
-            Pipe {x: screen_width()+200., y: screen_height()-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+250., y: 0.0-200.+40., w: 100.0, h: 300.0},
+            Pipe {x: screen_width()+250., y: screen_height()-200.+40., w: 100.0, h: 300.0},
                     ];
                     rng = rand::thread_rng();
                     trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
@@ -348,18 +349,16 @@ pub mod flappy_bird{
             }
             bird.pos += bird.vel;
     
-            if pontuacao > 20 {//1 dos 2 pipes descer
-                if pipes[3].y < screen_height(){
-                    pipes[2].h += vel_pipe_baixo;
-                    pipes[3].h += vel_pipe_baixo;
+            if pontuacao > (pontuacao_max/2) {//1 dos 2 pipes descer
+                if pipes[3].y < screen_height()-10.{
+                    pipes[2].y += vel_pipe_baixo;
                     pipes[3].y += vel_pipe_baixo;
                 }
             }
     
-            if pontuacao > 40 {//segundo pipe subir
-                if pipes[0].h > 0.{
-                    pipes[0].h -= vel_pipe_baixo;
-                    pipes[1].h += vel_pipe_baixo;
+            if pontuacao > ((pontuacao_max*3)/4) {//segundo pipe subir
+                if pipes[0].y > -screen_height()+distancia_pipe+120.{
+                    pipes[0].y -= vel_pipe_baixo;
                     pipes[1].y -= vel_pipe_baixo;
                 }
             }
@@ -394,20 +393,22 @@ pub mod flappy_bird{
             }
     
             //Geração de Novos Pipes, modifica os Pipes Originais para voltarem pro lado direito, funciona bem na tela pequena, tela grande fica ruim
-            if (pipes[0].x < bird.pos.x - 80. || pipes[1].x < bird.pos.x - 80. || pipes[2].x < bird.pos.x - 80. || pipes[3].x < bird.pos.x - 80.) && pontuacao <= 1 {
-                let mut valor = rng.gen_range(0..(screen_height() as i64/2)+40);
-                if contador % 2 == 0 {
-                    pipes[0] = Pipe {x: screen_width(), y: 0.0 - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
-                    pipes[1] = Pipe {x: screen_width(), y: screen_height() - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
-                }else{
-                    pipes[2] = Pipe {x: screen_width(), y: 0.0 - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
-                    pipes[3] = Pipe {x: screen_width(), y: screen_height() - valor as f32 - distancia_pipe+ 40., w: 100.0, h: 300.};
+            if (pipes[0].x < bird.pos.x - 80. || pipes[1].x < bird.pos.x - 80. || pipes[2].x < bird.pos.x - 80. || pipes[3].x < bird.pos.x - 80.) && pontuacao <= pontuacao_max {
+                if pontuacao < pontuacao_max{
+                    let mut valor = rng.gen_range(0..(screen_height() as i64/2)+20);
+                    if contador % 2 == 0 {
+                        pipes[0] = Pipe {x: screen_width(), y: 0.0 - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
+                        pipes[1] = Pipe {x: screen_width(), y: screen_height() - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
+                    }else{
+                        pipes[2] = Pipe {x: screen_width(), y: 0.0 - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
+                        pipes[3] = Pipe {x: screen_width(), y: screen_height() - valor as f32 - distancia_pipe+ 40., w: 100.0, h: 300.};
+                    }
                 }
                 contador+=1;
                 pontuacao+=1;
             } 
-            if pontuacao >= 2{
-                trofeu.x -= 1.;
+            if pontuacao >= pontuacao_max{
+                trofeu.x -= 0.8;
                 draw_texture_ex(
                     trofeu_texture,
                     trofeu.x,
