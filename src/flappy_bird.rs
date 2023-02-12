@@ -184,6 +184,21 @@ pub mod flappy_bird{
                         WHITE,
                     );
 
+                    let text = "Pressione (Esc) para voltar";
+                    let font_size = 30.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2. + 22.,
+                        screen_height() / 4. + 25. - text_size.height / 2.,
+                        font_size,
+                        WHITE,
+                    );
+
+                    if is_key_pressed(KeyCode::Escape) {
+                        return false;
+                    }
+
                     if is_key_pressed(KeyCode::Space) {
                         let mut timer_count = 3;
 
