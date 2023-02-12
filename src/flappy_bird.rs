@@ -2,6 +2,8 @@ pub mod flappy_bird{
     use macroquad::prelude::*;
     use ::rand;
     use rand::Rng;
+
+    use crate::GameState;
     
     
     const BIRD_HEIGHT: f32 = 25.;//tamanho do bird
@@ -53,11 +55,11 @@ pub mod flappy_bird{
         // Desenha logo cruzeiro
         draw_texture_ex(
             cruzeiro_texture,
-            bird.pos.x - 40.0,
+            bird.pos.x - 53.,
             bird.pos.y - 40.0,
             WHITE,
             DrawTextureParams {
-                dest_size: Some(Vec2::new(80., 80.)),
+                dest_size: Some(Vec2::new(93., 80.)),
                 ..Default::default()
             },
         );
@@ -112,6 +114,14 @@ pub mod flappy_bird{
         distance_squared < 40. * 40.
     }
 
+    pub enum FlappyState {
+        Startup,
+        Lose,
+        Win,
+        Paused,
+        Running
+    }
+
     pub(crate) async fn flappy_bird_game() -> bool{
 
         // Textures
@@ -135,30 +145,179 @@ pub mod flappy_bird{
         ];
         let mut trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
         let mut rng = rand::thread_rng(); //Para gerar um número randômico
-        let mut gameover = false;//gameover = true => fim de jogo
-        let mut winner = false;
-        let mut paused = false;//paused = true => pausa jogo
         let mut contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
         let mut pontuacao = 0;//pontuacao do jogador
         let mut dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
         let distancia_pipe = 70.;//quanto maior,menor a distância
         let vel_pipe_baixo = 0.5;//velocidade do pipe de ir para baixo e para cima quando passar de 20/40 pontos
+
+        // Estado inicial do Flappy Bird
+        let mut game_state = FlappyState::Startup;
+
         loop {
-            if gameover { //Se perder  o jogo
-                
-                // Desenha galo campeao
-                if winner == false {
-                    draw_texture_ex(
-                        galo_campeao_texture,
-                        0.0,
-                        0.0,
+            // Desenha todos os elementos da tela
+            draw_screen(campo_texture, cruzeiro_texture, galo_logo_texture, &bird, &pipes, pontuacao);
+
+            match game_state {
+
+                FlappyState::Startup => {
+                    let text = "Flappy Bird - Cruzeiro Edition";
+                    let font_size = 40.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2. + 22.,
+                        screen_height() / 5. - text_size.height / 2.,
+                        font_size,
                         WHITE,
-                        DrawTextureParams {
-                            dest_size: Some(vec2(screen_width(), screen_height())),
-                            ..Default::default()
-                        },
                     );
-                }else{
+
+                    let text = "Pressione (espaço) para iniciar";
+                    let font_size = 30.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2. + 22.,
+                        screen_height() / 4. - text_size.height / 2.,
+                        font_size,
+                        WHITE,
+                    );
+
+                    if is_key_pressed(KeyCode::Space) {
+                        let mut timer_count = 3;
+
+                        loop {
+                            if timer_count == 0 {
+                                break;
+                            }
+
+                            draw_screen(campo_texture, cruzeiro_texture, galo_logo_texture, &bird, &pipes, pontuacao);
+
+                            let text = &format!("Iniciando em {} ...", timer_count);
+                            let text_size = measure_text(text, None, font_size as _, 1.0);
+                            draw_text(
+                                text,
+                                screen_width() / 2. - text_size.width / 2.,
+                                screen_height() * 3. / 4. - text_size.height / 2.,
+                                font_size,
+                                WHITE,
+                            );
+
+                            next_frame().await;
+                            
+                            let old = macroquad::time::get_time();
+
+                            loop {
+                                let now = macroquad::time::get_time();
+                                if now - old >= 1.0 {
+                                    break;
+                                }
+                            }
+
+                            timer_count -= 1;
+                            
+                        }
+
+                        game_state = FlappyState::Running;
+                        continue;
+                    }
+
+                    next_frame().await;
+                    continue;
+                    
+                }
+
+                FlappyState::Paused => {
+                    let text = "PAUSADO";
+                    let font_size = 60.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2.,
+                        screen_height() / 5. - text_size.height / 2.,
+                        font_size,
+                        WHITE,
+                    );
+
+                    let text = &format!("Você está com {} pontos.", pontuacao);
+                    let font_size = 30.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2.,
+                        screen_height() * 3. / 4. - text_size.height / 2.,
+                        font_size,
+                        WHITE,
+                    );
+                    let text2 = "Aperte [esc] para continuar";
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text2,
+                        screen_width() / 4. - text_size.width / 2.,
+                        screen_height() * 3. / 4. - text_size.height / 2. + 50.,
+                        font_size,
+                        WHITE,
+                    );
+                    let text2 = "Aperte [q] para voltar ao menu";
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text2,
+                        screen_width() / 4. - text_size.width / 2.,
+                        screen_height() * 3. / 4. - text_size.height / 2. + 80.,
+                        font_size,
+                        WHITE,
+                    );
+                    if is_key_pressed(KeyCode::Q) {
+                        return false;
+                    }
+                    if is_key_pressed(KeyCode::Escape) {
+                        let mut timer_count = 3;
+
+                        loop {
+                            if timer_count == 0 {
+                                break;
+                            }
+
+                            draw_screen(campo_texture, cruzeiro_texture, galo_logo_texture, &bird, &pipes, pontuacao);
+
+
+                            let text = &format!("Retomando em {} ...", timer_count);
+                            let font_size = 40.;
+                            let text_size = measure_text(text, None, font_size as _, 1.0);
+                            draw_text(
+                                text,
+                                screen_width() / 2. - text_size.width / 2.,
+                                screen_height() * 3. / 4. - text_size.height / 2.,
+                                font_size,
+                                WHITE,
+                            );
+
+                            next_frame().await;
+                            
+                            let old = macroquad::time::get_time();
+
+                            loop {
+                                let now = macroquad::time::get_time();
+                                if now - old >= 1.0 {
+                                    break;
+                                }
+                            }
+
+                            timer_count -= 1;
+                            
+                        }
+
+                        game_state = FlappyState::Running;
+                        continue;
+                    }
+
+                    next_frame().await;
+                    continue;
+                }
+
+                FlappyState::Win => {
+                    clear_background(WHITE);
+
                     draw_texture_ex(
                         cruzeiro_campeao_texture,
                         0.0,
@@ -169,169 +328,159 @@ pub mod flappy_bird{
                             ..Default::default()
                         },
                     );
-                }
-        
 
-                // Desenha caixa para texto
-                draw_texture_ex(
-                    rounded_box_texture,
-                    screen_width() / 32. - 20.,
-                    screen_height() / 16. - 30.,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(vec2(500., 130.)),
-                        ..Default::default()
-                    },
-                );
+                     // Desenha caixa para texto
+                    draw_texture_ex(
+                        rounded_box_texture,
+                        screen_width() / 32. - 20.,
+                        screen_height() / 16. - 30.,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(500., 130.)),
+                            ..Default::default()
+                        },
+                    );
 
-                let text = &format!("Voce fez {} pontos",pontuacao);
-                let font_size = 30.;
-                let text_size = measure_text(text, None, font_size as _, 1.0);
-                draw_text(
-                    text,
-                    screen_width() / 32.,
-                    screen_height() / 16.,
-                    font_size,
-                    BLACK,
-                );
-                let text2 = "Aperte [enter] para jogar novamente";
-                draw_text(
-                    text2,
-                    screen_width() / 32.,
-                    screen_height() / 16. + 50.,
-                    font_size,
-                    BLACK,
-                );
-                let text2 = "Aperte [q] para voltar ao menu";
-                draw_text(
-                    text2,
-                    screen_width() / 32.,
-                    screen_height() / 16. + 80.,
-                    font_size,
-                    BLACK,
-                );
-                if is_key_down(KeyCode::Enter) {//Após perder o jogo, se apertar enter,reseta as variáveis
-                    bird = Bird {
-                        pos: Vec2::new(screen_width() / 2., screen_height() / 2.),
-                        vel: Vec2::new(0., 0.),
-                    };
-                    pipes = vec![
-                        Pipe {x: screen_width(), y: 0.0-200.+40., w: 100.0, h: 300.0},
-            Pipe {x: screen_width(), y: screen_height()-200.+40., w: 100.0, h: 300.0},
-            Pipe {x: screen_width()+200., y: 0.0-200.+40., w: 100.0, h: 300.0},
-            Pipe {x: screen_width()+200., y: screen_height()-200.+40., w: 100.0, h: 300.0},
-                    ];
-                    rng = rand::thread_rng();
-                    trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
-                    rng = rand::thread_rng(); //Para gerar um número randômico
-                    gameover = false;//gameover = true => fim de jogo
-                    winner = false;
-                    paused = false;//paused = true => pausa jogo
-                    contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
-                    pontuacao = 0;//pontuacao do jogador
-                    dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
-                }
-                if is_key_down(KeyCode::Q) {
-                    return false;
-                }
-                next_frame().await;
-                continue;
-            }
+                    let text = &format!("Voce fez {} pontos",pontuacao);
+                    let font_size = 30.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 32.,
+                        screen_height() / 16.,
+                        font_size,
+                        BLACK,
+                    );
+                    let text2 = "Aperte [enter] para jogar novamente";
+                    draw_text(
+                        text2,
+                        screen_width() / 32.,
+                        screen_height() / 16. + 50.,
+                        font_size,
+                        BLACK,
+                    );
+                    let text2 = "Aperte [q] para voltar ao menu";
+                    draw_text(
+                        text2,
+                        screen_width() / 32.,
+                        screen_height() / 16. + 80.,
+                        font_size,
+                        BLACK,
+                    );
+                    if is_key_down(KeyCode::Enter) {//Após perder o jogo, se apertar enter,reseta as variáveis
+                        bird = Bird {
+                            pos: Vec2::new(screen_width() / 2., screen_height() / 2.),
+                            vel: Vec2::new(0., 0.),
+                        };
+                        pipes = vec![
+                            Pipe {x: screen_width(), y: 0.0-200.+40., w: 100.0, h: 300.0},
+                            Pipe {x: screen_width(), y: screen_height()-200.+40., w: 100.0, h: 300.0},
+                            Pipe {x: screen_width()+200., y: 0.0-200.+40., w: 100.0, h: 300.0},
+                            Pipe {x: screen_width()+200., y: screen_height()-200.+40., w: 100.0, h: 300.0},
+                        ];
+                        rng = rand::thread_rng();
+                        trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
+                        rng = rand::thread_rng(); //Para gerar um número randômico
+                        contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
+                        pontuacao = 0;//pontuacao do jogador
+                        dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
 
-            // Desenha todos os elementos da tela
-            draw_screen(campo_texture, cruzeiro_texture, galo_logo_texture, &bird, &pipes, pontuacao);
-
-            if paused { //Se está pausado
-                let text = "PAUSADO";
-                let font_size = 60.;
-                let text_size = measure_text(text, None, font_size as _, 1.0);
-                draw_text(
-                    text,
-                    screen_width() / 4. - text_size.width / 2.,
-                    screen_height() / 5. - text_size.height / 2.,
-                    font_size,
-                    WHITE,
-                );
-
-                let text = &format!("Você está com {} pontos.", pontuacao);
-                let font_size = 30.;
-                let text_size = measure_text(text, None, font_size as _, 1.0);
-                draw_text(
-                    text,
-                    screen_width() / 4. - text_size.width / 2.,
-                    screen_height() * 3. / 4. - text_size.height / 2.,
-                    font_size,
-                    WHITE,
-                );
-                let text2 = "Aperte [esc] para continuar";
-                let text_size = measure_text(text, None, font_size as _, 1.0);
-                draw_text(
-                    text2,
-                    screen_width() / 4. - text_size.width / 2.,
-                    screen_height() * 3. / 4. - text_size.height / 2. + 50.,
-                    font_size,
-                    WHITE,
-                );
-                let text2 = "Aperte [q] para voltar ao menu";
-                let text_size = measure_text(text, None, font_size as _, 1.0);
-                draw_text(
-                    text2,
-                    screen_width() / 4. - text_size.width / 2.,
-                    screen_height() * 3. / 4. - text_size.height / 2. + 80.,
-                    font_size,
-                    WHITE,
-                );
-                if is_key_pressed(KeyCode::Q) {
-                    return false;
-                }
-                if is_key_pressed(KeyCode::Escape) {
-                    let mut timer_count = 3;
-
-                    loop {
-                        if timer_count == 0 {
-                            break;
-                        }
-
-                        draw_screen(campo_texture, cruzeiro_texture, galo_logo_texture, &bird, &pipes, pontuacao);
-
-
-                        let text = &format!("Retomando em {} ...", timer_count);
-                        let text_size = measure_text(text, None, font_size as _, 1.0);
-                        draw_text(
-                            text,
-                            screen_width() / 2. - text_size.width / 2.,
-                            screen_height() * 3. / 4. - text_size.height / 2.,
-                            font_size,
-                            WHITE,
-                        );
-
-                        next_frame().await;
-                        
-                        let old = macroquad::time::get_time();
-
-                        loop {
-                            let now = macroquad::time::get_time();
-                            if now - old >= 1.0 {
-                                break;
-                            }
-                        }
-
-                        timer_count -= 1;
-                        
+                        game_state = FlappyState::Startup;
                     }
-
-                    paused = false;
+                    if is_key_down(KeyCode::Q) {
+                        return false;
+                    }
+                    next_frame().await;
                     continue;
                 }
 
-                next_frame().await;
-                continue;
+                FlappyState::Lose => {
+                    clear_background(WHITE);
+
+                    draw_texture_ex(
+                        galo_campeao_texture,
+                        0.0,
+                        0.0,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(screen_width(), screen_height())),
+                            ..Default::default()
+                        },
+                    );
+
+                    // Desenha caixa para texto
+                    draw_texture_ex(
+                        rounded_box_texture,
+                        screen_width() / 32. - 20.,
+                        screen_height() / 16. - 30.,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(500., 130.)),
+                            ..Default::default()
+                        },
+                    );
+
+                    let text = &format!("Voce fez {} pontos",pontuacao);
+                    let font_size = 30.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 32.,
+                        screen_height() / 16.,
+                        font_size,
+                        BLACK,
+                    );
+                    let text2 = "Aperte [enter] para jogar novamente";
+                    draw_text(
+                        text2,
+                        screen_width() / 32.,
+                        screen_height() / 16. + 50.,
+                        font_size,
+                        BLACK,
+                    );
+                    let text2 = "Aperte [q] para voltar ao menu";
+                    draw_text(
+                        text2,
+                        screen_width() / 32.,
+                        screen_height() / 16. + 80.,
+                        font_size,
+                        BLACK,
+                    );
+                    if is_key_down(KeyCode::Enter) {//Após perder o jogo, se apertar enter,reseta as variáveis
+                        bird = Bird {
+                            pos: Vec2::new(screen_width() / 2., screen_height() / 2.),
+                            vel: Vec2::new(0., 0.),
+                        };
+                        pipes = vec![
+                            Pipe {x: screen_width(), y: 0.0-200.+40., w: 100.0, h: 300.0},
+                            Pipe {x: screen_width(), y: screen_height()-200.+40., w: 100.0, h: 300.0},
+                            Pipe {x: screen_width()+200., y: 0.0-200.+40., w: 100.0, h: 300.0},
+                            Pipe {x: screen_width()+200., y: screen_height()-200.+40., w: 100.0, h: 300.0},
+                        ];
+                        rng = rand::thread_rng();
+                        trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
+                        rng = rand::thread_rng(); //Para gerar um número randômico
+                        contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
+                        pontuacao = 0;//pontuacao do jogador
+                        dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
+
+                        game_state = FlappyState::Startup;
+                    }
+                    if is_key_down(KeyCode::Q) {
+                        return false;
+                    }
+                    next_frame().await;
+                    continue;
+                }
+
+                _ => {}
             }
     
             let mut acc = -bird.vel / 100.; // Fricçãi
 
+            // Pausa o jogo
             if is_key_pressed(KeyCode::Escape) {
-                paused = true;
+                game_state = FlappyState::Paused;
                 next_frame().await;
                 continue;
             }
@@ -395,7 +544,7 @@ pub mod flappy_bird{
     
             //Geração de Novos Pipes, modifica os Pipes Originais para voltarem pro lado direito, funciona bem na tela pequena, tela grande fica ruim
             if (pipes[0].x < bird.pos.x - 80. || pipes[1].x < bird.pos.x - 80. || pipes[2].x < bird.pos.x - 80. || pipes[3].x < bird.pos.x - 80.) && pontuacao <= 1 {
-                let mut valor = rng.gen_range(0..(screen_height() as i64/2)+40);
+                let valor = rng.gen_range(0..(screen_height() as i64/2)+40);
                 if contador % 2 == 0 {
                     pipes[0] = Pipe {x: screen_width(), y: 0.0 - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
                     pipes[1] = Pipe {x: screen_width(), y: screen_height() - valor as f32 - distancia_pipe + 40., w: 100.0, h: 300.};
@@ -418,10 +567,15 @@ pub mod flappy_bird{
                         ..Default::default()
                     },
                 );
-                winner = hit_trophy(&bird ,&mut trofeu);
+                if hit_trophy(&bird ,&mut trofeu) {
+                    game_state = FlappyState::Win;
+                }
             }
     
-            gameover = death_screen(&bird.pos) || gameover_pipes || winner;//gameover
+            if death_screen(&bird.pos) || gameover_pipes {
+                game_state = FlappyState::Lose;
+            }
+
             next_frame().await
         }
     }

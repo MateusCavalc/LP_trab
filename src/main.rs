@@ -15,52 +15,6 @@ use macroquad::ui::{
     Drag, Ui, Skin
 };
 
-// pub fn draw_menu() {
-//     let text = "< Simulador de jogos - Linguagens de Programação 2023 >";
-//     let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
-//     draw_text(
-//         text,
-//         screen_width() / 2. - text_size.width / 2.,
-//         screen_height() / 4. - text_size.height / 2.,
-//         TEXT_SIZE,
-//         TEXT_COLOR,
-//     );
-    
-//     let text = "Asteroids";
-//     let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
-//     let x_midscreen = screen_width() / 2. - text_size.width / 2.;
-//     let y_midscreen = screen_height() / 2. - text_size.height / 2.;
-
-//     widgets::Button::new(text)
-//         .position(Vec2::new(x_midscreen, y_midscreen))
-//         // .size(Vec2::new(150., 100.))
-//         .ui(&mut *root_ui());
-
-//     draw_text(
-//         text,
-//         x_midscreen,
-//         y_midscreen,
-//         TEXT_SIZE,
-//         TEXT_COLOR,
-//     );
-
-//     let text = "Flappy Bird";
-//     let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
-
-//     widgets::Button::new(text)
-//         .position(Vec2::new(x_midscreen, y_midscreen + (y_midscreen / 4.)))
-//         .ui(&mut *root_ui());
-
-//     draw_text(
-//         text,
-//         x_midscreen,
-//         y_midscreen + (y_midscreen / 4.),
-//         TEXT_SIZE,
-//         TEXT_COLOR,
-//     );
-
-// }
-
 pub enum GameState {
     Menu,
     Asteroids,
@@ -77,25 +31,36 @@ fn window_conf() -> Conf {
       window_resizable: false,
       ..Default::default()
     }
-  }
+}
+
+fn draw_loading_screen(x_midscreen: f32, y_midscreen: f32) {
+    let text = "Carregando ...";
+    let font_size = 30.;
+    let text_size = measure_text(text, None, font_size as _, 1.0);
+    draw_text(
+        text,
+        x_midscreen - text_size.width / 2.,
+        y_midscreen - text_size.height / 2.,
+        font_size,
+        BLACK,
+    );
+}
+
+const LABEL_SIZE: u16 = 50;
 
 #[macroquad::main(window_conf)]
 async fn main() {
 
-    let texture: Texture2D = load_texture("res/top.png").await.unwrap();
-
     let mut game_state = GameState::Menu;
 
-    let text = "Asteroids";
-    let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
-    let x_midscreen = screen_width() / 2. - text_size.width / 2.;
-    let y_midscreen = screen_height() / 2. - text_size.height / 2.;
+    let x_midscreen = screen_width() / 2.;
+    let y_midscreen = screen_height() / 2.;
 
     let skin = {
         let button_style = root_ui()
         .style_builder()
         .text_color(Color::from_rgba(180, 180, 100, 255))
-        .font_size(TEXT_SIZE)
+        .font_size(LABEL_SIZE)
         .build();
 
         Skin {
@@ -110,16 +75,6 @@ async fn main() {
 
     loop {
         clear_background(WHITE);
-        draw_texture_ex(
-            texture,
-            0.0,
-            0.0,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height())),
-                ..Default::default()
-            },
-        );
 
         match game_state {
             GameState::Menu => {
@@ -133,35 +88,12 @@ async fn main() {
                     TEXT_COLOR,
                 );
 
-                // widgets::Button::new(text)
-                //     .position(Vec2::new(x_midscreen, y_midscreen))
-                //     // .size(Vec2::new(150., 100.))
-                //     .ui(&mut *root_ui());
-
-                // draw_text(
-                //     text,
-                //     x_midscreen,
-                //     y_midscreen,
-                //     TEXT_SIZE,
-                //     TEXT_COLOR,
-                // );
-
-                // let text = "Flappy Bird";
-                // let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
-
-                // widgets::Button::new(text)
-                //     .position(Vec2::new(x_midscreen, y_midscreen + (y_midscreen / 4.)))
-                //     .ui(&mut *root_ui() => );
-
-                // draw_text(
-                //     text,
-                //     x_midscreen,
-                //     y_midscreen + (y_midscreen / 4.),
-                //     TEXT_SIZE,
-                //     TEXT_COLOR,
-                // );
             }
             GameState::Asteroids => {
+                clear_background(WHITE);
+                draw_loading_screen(x_midscreen, y_midscreen);
+
+                next_frame().await;
                 loop {
                     if !asteroids_game().await {
                         break;
@@ -171,17 +103,7 @@ async fn main() {
             }
             GameState::FlappyBird => {
                 clear_background(WHITE);
-
-                let text = "Carregando ...";
-                let font_size = 30.;
-                let text_size = measure_text(text, None, font_size as _, 1.0);
-                draw_text(
-                    text,
-                    screen_width() / 2. - text_size.width / 2.,
-                    screen_height() / 2. - text_size.height / 2.,
-                    font_size,
-                    BLACK,
-                );
+                draw_loading_screen(x_midscreen, y_midscreen);
 
                 next_frame().await;
 
@@ -194,37 +116,21 @@ async fn main() {
             }
         }
 
-        if root_ui().button(Vec2::new(x_midscreen, y_midscreen), "Asteroids") {
+        let mut button_label = "Asteroids";
+        let mut label_size = measure_text(button_label, None, LABEL_SIZE, 1.0);
+
+        if root_ui().button(Vec2::new(x_midscreen - label_size.width / 2., y_midscreen), button_label) {
             println!("Play asteroids");
             game_state = GameState::Asteroids;
         }
 
-        if root_ui().button(Vec2::new(x_midscreen, y_midscreen + (y_midscreen / 4.)), "Flappy Bird") {
+        button_label = "Flappy Bird";
+        label_size = measure_text(button_label, None, LABEL_SIZE, 1.0);
+
+        if root_ui().button(Vec2::new(x_midscreen - label_size.width / 2., y_midscreen + (y_midscreen / 4.)), button_label) {
             println!("Play Flappy Bird");
             game_state = GameState::FlappyBird;
         }
-
-        // widgets::Label::new("abc")
-        //         .position(Vec2::new(100., 100.))
-        //         .ui(&mut *root_ui());
-
-        // widgets::Window::new(hash!(), vec2(100., 100.), vec2(600., 400.))
-        //         .label("Teste")
-        //         .titlebar(true)
-        //         .ui(&mut *root_ui(), |ui| {
-        //             ui.label(Vec2::new(230., 50.), "Ladeira corno");
-        //             if ui.button(Vec2::new(260., 100.), "Asteroids") {
-        //                 println!("Play asteroids");
-        //                 // loop {
-        //                 //         if !play().await {
-        //                 //             break;
-        //                 //         }
-        //                 // }
-        //             }
-        //             if ui.button(Vec2::new(260., 150.), "Flappy Bird") {
-        //                 println!("Play Flappy Bird");
-        //             }
-        //         });
 
         next_frame().await;
     }

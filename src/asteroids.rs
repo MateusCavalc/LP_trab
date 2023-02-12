@@ -25,7 +25,7 @@ pub mod asteroids{
     const BULLET_COLOR: Color = RED;
 
     pub const TEXT_COLOR: Color = BLACK;
-    pub const TEXT_SIZE: u16 = 30;   
+    pub const TEXT_SIZE: u16 = 40;   
     
     struct Ship {
         position: Vec2,
