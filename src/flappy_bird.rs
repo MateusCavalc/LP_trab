@@ -24,6 +24,62 @@ pub mod flappy_bird{
         w: f32,
         h: f32,
     }
+
+    fn draw_screen(campo_texture: Texture2D, cruzeiro_texture: Texture2D, galo_logo_texture: Texture2D, bird: &Bird, pipes: &Vec<Pipe>, pontuacao: i64) {
+        // Desenha o campo
+        draw_texture_ex(
+            campo_texture,
+            0.0,
+            0.0,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(screen_width(), screen_height())),
+                ..Default::default()
+            },
+        );
+
+        let text = &format!("{}", pontuacao);//Mostrar pontuação
+        let font_size = 90.;
+        draw_text(
+            text,
+            screen_width()/2.  - 200.,
+            screen_height()/2. - 50.,
+            font_size,
+            RED,
+        );
+
+        // draw_circle_lines(bird.pos.x, bird.pos.y, 41., 2., BLACK);
+
+        // Desenha logo cruzeiro
+        draw_texture_ex(
+            cruzeiro_texture,
+            bird.pos.x - 40.0,
+            bird.pos.y - 40.0,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(Vec2::new(80., 80.)),
+                ..Default::default()
+            },
+        );
+
+        let pipes_iter = pipes.iter();//iterar todos os pipes
+
+        for p in pipes_iter {//desenhar os pipes, fazer eles irem paa esquerda e também colisão do pipe com o bird
+            // draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
+
+            // Desenha pipe do galo
+            draw_texture_ex(
+                galo_logo_texture,
+                p.x,
+                p.y,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(Vec2::new(p.w, p.h)),
+                    ..Default::default()
+                },
+            );
+        }
+    }
     
     fn death_screen(v: &Vec2) -> bool {//Código para GameOver se tocar embaixo ou emcima da Tela
         let mut life = false;
@@ -182,59 +238,8 @@ pub mod flappy_bird{
                 continue;
             }
 
-            // Desenha o campo
-            draw_texture_ex(
-                campo_texture,
-                0.0,
-                0.0,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(vec2(screen_width(), screen_height())),
-                    ..Default::default()
-                },
-            );
-    
-            let text = &format!("{}",pontuacao);//Mostrar pontuação
-            let font_size = 90.;
-            draw_text(
-                text,
-                screen_width()/2.  - 200.,
-                screen_height()/2. - 50.,
-                font_size,
-                RED,
-            );
-    
-            // draw_circle_lines(bird.pos.x, bird.pos.y, 41., 2., BLACK);
-
-            // Desenha logo cruzeiro
-            draw_texture_ex(
-                cruzeiro_texture,
-                bird.pos.x - 40.0,
-                bird.pos.y - 40.0,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(Vec2::new(80., 80.)),
-                    ..Default::default()
-                },
-            );
-
-            let pipes_iter = pipes.iter();//iterar todos os pipes
-
-            for p in pipes_iter {//desenhar os pipes, fazer eles irem paa esquerda e também colisão do pipe com o bird
-                // draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
-
-                // Desenha pipe do galo
-                draw_texture_ex(
-                    galo_logo_texture,
-                    p.x,
-                    p.y,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(Vec2::new(p.w, p.h)),
-                        ..Default::default()
-                    },
-                );
-            }
+            // Desenha todos os elementos da tela
+            draw_screen(campo_texture, cruzeiro_texture, galo_logo_texture, &bird, &pipes, pontuacao);
 
             if paused { //Se está pausado
                 let text = "PAUSADO";
@@ -259,6 +264,7 @@ pub mod flappy_bird{
                     WHITE,
                 );
                 let text2 = "Aperte [esc] para continuar";
+                let text_size = measure_text(text, None, font_size as _, 1.0);
                 draw_text(
                     text2,
                     screen_width() / 4. - text_size.width / 2.,
@@ -267,6 +273,7 @@ pub mod flappy_bird{
                     WHITE,
                 );
                 let text2 = "Aperte [q] para voltar ao menu";
+                let text_size = measure_text(text, None, font_size as _, 1.0);
                 draw_text(
                     text2,
                     screen_width() / 4. - text_size.width / 2.,
@@ -278,8 +285,45 @@ pub mod flappy_bird{
                     return false;
                 }
                 if is_key_pressed(KeyCode::Escape) {
+                    let mut timer_count = 3;
+
+                    loop {
+                        if timer_count == 0 {
+                            break;
+                        }
+
+                        draw_screen(campo_texture, cruzeiro_texture, galo_logo_texture, &bird, &pipes, pontuacao);
+
+
+                        let text = &format!("Retomando em {} ...", timer_count);
+                        let text_size = measure_text(text, None, font_size as _, 1.0);
+                        draw_text(
+                            text,
+                            screen_width() / 2. - text_size.width / 2.,
+                            screen_height() * 3. / 4. - text_size.height / 2.,
+                            font_size,
+                            WHITE,
+                        );
+
+                        next_frame().await;
+                        
+                        let old = macroquad::time::get_time();
+
+                        loop {
+                            let now = macroquad::time::get_time();
+                            if now - old >= 1.0 {
+                                break;
+                            }
+                        }
+
+                        timer_count -= 1;
+                        
+                    }
+
                     paused = false;
+                    continue;
                 }
+
                 next_frame().await;
                 continue;
             }
@@ -381,4 +425,4 @@ pub mod flappy_bird{
             next_frame().await
         }
     }
-    }
+}
