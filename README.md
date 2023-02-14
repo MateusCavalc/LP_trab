@@ -1,4 +1,2 @@
 # Simulador de jogos - Linguagens de Programação 2023
-Simulador simples, desenvolvido em Rust, implementado para a disciplina de linguagens de programação.
-
-![ladeira](https://github.com/MateusCavalc/LP_trab/blob/main/res/top.png)
+Simulador de jogos simples, desenvolvido em Rust, implementado para a disciplina de linguagens de programação. Os jogos implementados são: Asteroids e Flappy Bird, ambos sendo Cruzeiro Edition.

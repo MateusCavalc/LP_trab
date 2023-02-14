@@ -74,6 +74,7 @@ async fn main() {
     root_ui().push_skin(&skin_schema);
 
     loop {
+        
         clear_background(WHITE);
 
         match game_state {
