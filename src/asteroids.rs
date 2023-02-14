@@ -25,9 +25,11 @@ pub mod asteroids{
     const BULLET_COLOR: Color = RED;
 
     pub const TEXT_COLOR: Color = BLACK;
-    pub const TEXT_SIZE: u16 = 40;   
+    pub const TEXT_SIZE: u16 = 40;
     
     struct Ship {
+        ship_logo: Texture2D,
+        bullet_logo: Texture2D,
         position: Vec2,
         rotation: f32,
         bullets: Vec<Bullet>,
@@ -36,9 +38,11 @@ pub mod asteroids{
     }
     
     impl Ship {
-        fn new() -> Ship {
+        fn new(_ship_logo: Texture2D, _bullet_logo: Texture2D) -> Ship {
             rand::srand(macroquad::miniquad::date::now() as _);
             Ship {
+                ship_logo: _ship_logo,
+                bullet_logo: _bullet_logo,
                 position: Vec2::new(screen_width() / 2., screen_height() / 2.),
                 rotation: 0.,
                 bullets: vec![],
@@ -47,7 +51,7 @@ pub mod asteroids{
             }
         }
     
-        fn draw(&mut self, ship_logo: Texture2D, bullet_logo: Texture2D) {
+        fn draw(&mut self) {
             let rotation = self.rotation.to_radians();
     
             //let v1 = Vec2::new(
@@ -73,7 +77,7 @@ pub mod asteroids{
     
             //draw_triangle_lines(v1, v2, v3, SHIP_LINE_THICKNESS, SHIP_COLOR);
             draw_texture_ex(
-                ship_logo,
+                self.ship_logo,
                 self.position.x - 25.,
                 self.position.y - 31.25,
                 WHITE,
@@ -85,6 +89,8 @@ pub mod asteroids{
             );
             draw_circle(self.position.x,self.position.y,1.,SHIP_COLOR);
             let rotation_ship = self.rotation;
+
+            let bullet_logo = self.bullet_logo;
     
             self.bullets.iter_mut().for_each(|b| b.update());
             self.bullets.iter_mut().for_each(|b| b.draw(bullet_logo,rotation_ship));
@@ -213,10 +219,10 @@ pub mod asteroids{
         fn new() -> Asteroid {
             Asteroid {
                 position: Vec2::new(
-                   // rand::gen_range(35.0, screen_width() - 36.),
-                   // rand::gen_range(35.0, screen_height() - 36.),
-                   0.,
-                   0.
+                   rand::gen_range(35.0, screen_width() - 36.),
+                   rand::gen_range(35.0, screen_height() - 36.),
+                //    0.,
+                //    0.
                 ),
                 sides: rand::gen_range(12, 24),
                 size: 100.,
@@ -340,6 +346,31 @@ pub mod asteroids{
             }
         }
     }
+    
+    fn draw_screen(bg_texture: Texture2D, atletico_logo: Texture2D, ship: &mut Ship, asteroids: &Vec<Asteroid>) {
+        // Desenha o fundo
+        draw_texture_ex(
+            bg_texture,
+            0.0,
+            0.0,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(screen_width(), screen_height())),
+                ..Default::default()
+            },
+        );
+
+        ship.draw();
+        asteroids.iter().for_each(|a| a.draw(atletico_logo));
+    }
+
+    pub enum AsteroidsState {
+        Startup,
+        Lose,
+        Win,
+        Paused,
+        Running
+    }
 
     pub(crate) async fn asteroids_game() -> bool{
         let bg_texture: Texture2D = load_texture("res/asteroids_bg.png").await.unwrap();
@@ -349,86 +380,288 @@ pub mod asteroids{
         let cruzeiro_logo: Texture2D = load_texture("res/cruzeiro-logo.png").await.unwrap();
         let atletico_logo: Texture2D = load_texture("res/atletico-logo.png").await.unwrap();
         
-        let mut ship = Ship::new();
+        let mut ship = Ship::new(cruzeiro_logo, bullet_texture);
         let mut asteroids: Vec<_> = (0..ASTEROID_COUNT).map(|_| Asteroid::new()).collect();
-        let mut did_win = true;
+        let mut collided = false;
+
+        // Estado inicial do Asteroids
+        let mut game_state = AsteroidsState::Startup;
 
         loop {
-            if is_key_down(KeyCode::Escape) {
-                return false;
+            // desenha tela
+            draw_screen(bg_texture, atletico_logo, &mut ship, &asteroids);
+
+            match game_state {
+
+                AsteroidsState::Startup => {
+                    let text = "Asteroids- Cruzeiro Edition";
+                    let font_size = 40.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2. + 22.,
+                        screen_height() / 5. - text_size.height / 2.,
+                        font_size,
+                        WHITE,
+                    );
+
+                    let text = "Pressione (enter) para iniciar";
+                    let font_size = 30.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2. + 22.,
+                        screen_height() / 4. - text_size.height / 2.,
+                        font_size,
+                        WHITE,
+                    );
+
+                    let text = "Pressione (Esc) para voltar";
+                    let font_size = 30.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2. + 22.,
+                        screen_height() / 4. + 25. - text_size.height / 2.,
+                        font_size,
+                        WHITE,
+                    );
+
+                    if is_key_pressed(KeyCode::Escape) {
+                        return false;
+                    }
+
+                    if is_key_pressed(KeyCode::Enter) {
+                        let mut timer_count = 3;
+
+                        loop {
+                            if timer_count == 0 {
+                                break;
+                            }
+
+                            draw_screen(bg_texture, atletico_logo, &mut ship, &asteroids);
+
+                            let text = &format!("Iniciando em {} ...", timer_count);
+                            let text_size = measure_text(text, None, font_size as _, 1.0);
+                            draw_text(
+                                text,
+                                screen_width() / 2. - text_size.width / 2.,
+                                screen_height() * 3. / 4. - text_size.height / 2.,
+                                font_size,
+                                WHITE,
+                            );
+
+                            next_frame().await;
+                            
+                            let old = macroquad::time::get_time();
+
+                            loop {
+                                let now = macroquad::time::get_time();
+                                if now - old >= 1.0 {
+                                    break;
+                                }
+                            }
+
+                            timer_count -= 1;
+                            
+                        }
+
+                        game_state = AsteroidsState::Running;
+                        continue;
+                    }
+
+                    next_frame().await;
+                    continue;
+                }
+    
+                AsteroidsState::Paused => {
+                    let text = "PAUSADO";
+                    let font_size = 60.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text,
+                        screen_width() / 4. - text_size.width / 2.,
+                        screen_height() / 5. - text_size.height / 2.,
+                        font_size,
+                        WHITE,
+                    );
+
+                    let text2 = "Aperte [esc] para continuar";
+                    let font_size = 30.;
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text2,
+                        screen_width() * 3. / 5. - text_size.width / 2.,
+                        screen_height() * 3. / 4. - text_size.height / 2. + 50.,
+                        font_size,
+                        WHITE,
+                    );
+                    let text2 = "Aperte [q] para voltar ao menu";
+                    let text_size = measure_text(text, None, font_size as _, 1.0);
+                    draw_text(
+                        text2,
+                        screen_width() * 3. / 5. - text_size.width / 2.,
+                        screen_height() * 3. / 4. - text_size.height / 2. + 80.,
+                        font_size,
+                        WHITE,
+                    );
+                    if is_key_pressed(KeyCode::Q) {
+                        return false;
+                    }
+                    if is_key_pressed(KeyCode::Escape) {
+                        let mut timer_count = 3;
+
+                        loop {
+                            if timer_count == 0 {
+                                break;
+                            }
+
+                            draw_screen(bg_texture, atletico_logo, &mut ship, &asteroids);
+
+                            let text = &format!("Retomando em {} ...", timer_count);
+                            let font_size = 40.;
+                            let text_size = measure_text(text, None, font_size as _, 1.0);
+                            draw_text(
+                                text,
+                                screen_width() / 2. - text_size.width / 2.,
+                                screen_height() * 3. / 4. - text_size.height / 2.,
+                                font_size,
+                                WHITE,
+                            );
+
+                            next_frame().await;
+                            
+                            let old = macroquad::time::get_time();
+
+                            loop {
+                                let now = macroquad::time::get_time();
+                                if now - old >= 1.0 {
+                                    break;
+                                }
+                            }
+
+                            timer_count -= 1;
+                            
+                        }
+
+                        game_state = AsteroidsState::Running;
+                        continue;
+                    }
+
+                    next_frame().await;
+                    continue;
+                }
+    
+                AsteroidsState::Win => {
+                    // Desenha o fundo de vitoria
+                    draw_texture_ex(
+                        win_bg_texture,
+                        0.0,
+                        0.0,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(screen_width(), screen_height())),
+                            ..Default::default()
+                        },
+                    );
+
+                    let text = "Aperte [enter] para jogar novamente";
+                    let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
+
+                    draw_text(
+                        text,
+                        screen_width() / 2. - text_size.width / 2.,
+                        screen_height() / 3. - text_size.height / 2.,
+                        TEXT_SIZE as f32,
+                        WHITE,
+                    );
+
+                    let text = "Aperte [q] para voltar ao menu";
+                    let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
+
+                    draw_text(
+                        text,
+                        screen_width() / 2. - text_size.width / 2.,
+                        screen_height() / 3. + (35.) - text_size.height / 2.,
+                        TEXT_SIZE as f32,
+                        WHITE,
+                    );
+
+                    if is_key_down(KeyCode::Enter) {//Após ganhar o jogo, se apertar enter,reseta as variáveis
+                        ship = Ship::new(cruzeiro_logo, bullet_texture);
+                        asteroids = (0..ASTEROID_COUNT).map(|_| Asteroid::new()).collect();
+                        collided = false;
+
+                        game_state = AsteroidsState::Startup;
+                    }
+
+                    if is_key_down(KeyCode::Q) {
+                        return false;
+                    }
+                    next_frame().await;
+                    continue;
+                }
+    
+                AsteroidsState::Lose => {
+                    // Desenha o fundo de derrota
+                    draw_texture_ex(
+                        lose_bg_texture,
+                        0.0,
+                        0.0,
+                        WHITE,
+                        DrawTextureParams {
+                            dest_size: Some(vec2(screen_width(), screen_height())),
+                            ..Default::default()
+                        },
+                    );
+
+                    let text = "Aperte [enter] para jogar novamente";
+                    let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
+
+                    draw_text(
+                        text,
+                        screen_width() / 2. - text_size.width / 2.,
+                        screen_height() / 3. - text_size.height / 2.,
+                        TEXT_SIZE as f32,
+                        WHITE,
+                    );
+
+                    let text = "Aperte [q] para voltar ao menu";
+                    let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
+
+                    draw_text(
+                        text,
+                        screen_width() / 2. - text_size.width / 2.,
+                        screen_height() / 3. + (35.) - text_size.height / 2.,
+                        TEXT_SIZE as f32,
+                        WHITE,
+                    );
+
+                    if is_key_down(KeyCode::Enter) {//Após perder o jogo, se apertar enter,reseta as variáveis
+                        ship = Ship::new(cruzeiro_logo, bullet_texture);
+                        asteroids = (0..ASTEROID_COUNT).map(|_| Asteroid::new()).collect();
+                        collided = false;
+
+                        game_state = AsteroidsState::Startup;
+                    }
+
+                    if is_key_down(KeyCode::Q) {
+                        return false;
+                    }
+                    next_frame().await;
+                    continue;
+                }
+    
+                _ => {}
+    
             }
 
-            clear_background(BACKGROUND_COLOR);
-
-            // Desenha o fundo
-            draw_texture_ex(
-                bg_texture,
-                0.0,
-                0.0,
-                WHITE,
-                DrawTextureParams {
-                    dest_size: Some(vec2(screen_width(), screen_height())),
-                    ..Default::default()
-                },
-            );
-
-            if asteroids.is_empty() && did_win {
-
-                // Desenha o fundo de vitoria
-                draw_texture_ex(
-                    win_bg_texture,
-                    0.0,
-                    0.0,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(vec2(screen_width(), screen_height())),
-                        ..Default::default()
-                    },
-                );
-
-                let text = "You Win!. Press [enter] to play again.";
-                let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
-
-                draw_text(
-                    text,
-                    screen_width() / 2. - text_size.width / 2.,
-                    screen_height() / 2. - text_size.height / 2.,
-                    TEXT_SIZE as f32,
-                    TEXT_COLOR,
-                );
-
-                if is_key_down(KeyCode::Enter) {
-                    return true;
-                }
-            } else if asteroids.is_empty() {
-
-                // Desenha o fundo de derrota
-                draw_texture_ex(
-                    lose_bg_texture,
-                    0.0,
-                    0.0,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(vec2(screen_width(), screen_height())),
-                        ..Default::default()
-                    },
-                );
-
-                let text = "Game Over. Press [enter] to play again.";
-                let text_size = measure_text(text, None, TEXT_SIZE as u16, 1.0);
-
-                draw_text(
-                    text,
-                    screen_width() / 2. - text_size.width / 2.,
-                    screen_height() / 2. - text_size.height / 2.,
-                    TEXT_SIZE as f32,
-                    TEXT_COLOR,
-                );
-
-                if is_key_down(KeyCode::Enter) {
-                    return true;
-                }
-            }
+            // Pausa o jogo
+            if is_key_pressed(KeyCode::Escape) {
+                game_state = AsteroidsState::Paused;
+                next_frame().await;
+                continue;
+            }            
 
             let mut indexes_to_remove = HashSet::new();
             let mut asteroids_to_add = vec![];
@@ -436,7 +669,6 @@ pub mod asteroids{
             for (i, asteroid) in asteroids.iter_mut().enumerate() {
                 for (b, bullet) in ship.bullets.iter().enumerate() {
                     if asteroid.collided(&bullet.position) {
-                        println!("collided");
                         bullets_to_remove.push(b);
                         let a = asteroid.resize();
                         match a {
@@ -448,31 +680,39 @@ pub mod asteroids{
                     }
                 }
 
-                if asteroid.collided(&ship.position) && !ship.has_shield {
-                    did_win = false;
+                if asteroid.collided(&ship.position) && !(ship.has_shield) {
+                    collided = true;
                 }
             }
 
-            if !did_win {
-                asteroids = vec![];
-            } else {
-                for (num_removed, i) in indexes_to_remove.into_iter().enumerate() {
-                    asteroids.remove(i - num_removed);
-                }
-                for (num_removed, i) in bullets_to_remove.into_iter().enumerate() {
-                    ship.bullets.remove(i - num_removed);
-                }
-                for i in asteroids_to_add {
-                    asteroids.push(i);
-                }
+            if collided {
+                game_state = AsteroidsState::Lose;
+                continue;
+                
             }
 
-            ship.draw(cruzeiro_logo, bullet_texture);
+            for (num_removed, i) in indexes_to_remove.into_iter().enumerate() {
+                asteroids.remove(i - num_removed);
+            }
+            for (num_removed, i) in bullets_to_remove.into_iter().enumerate() {
+                ship.bullets.remove(i - num_removed);
+            }
+            for i in asteroids_to_add {
+                asteroids.push(i);
+            }
+
+            if asteroids.is_empty() {
+                game_state = AsteroidsState::Win;
+                continue;
+            }
+
             ship.mv();
-            asteroids.iter().for_each(|a| a.draw(atletico_logo));
             asteroids.iter_mut().for_each(|a| a.mv());
 
             next_frame().await;
+
         }
+
     }
+
 }

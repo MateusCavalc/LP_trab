@@ -240,7 +240,6 @@ pub mod flappy_bird{
 
                     next_frame().await;
                     continue;
-                    
                 }
 
                 FlappyState::Paused => {
@@ -295,7 +294,6 @@ pub mod flappy_bird{
                             }
 
                             draw_screen(campo_texture, cruzeiro_texture, galo_logo_texture, &bird, &pipes, pontuacao);
-
 
                             let text = &format!("Retomando em {} ...", timer_count);
                             let font_size = 40.;
@@ -383,7 +381,7 @@ pub mod flappy_bird{
                         font_size,
                         BLACK,
                     );
-                    if is_key_down(KeyCode::Enter) {//Após perder o jogo, se apertar enter,reseta as variáveis
+                    if is_key_down(KeyCode::Enter) {//Após ganhar o jogo, se apertar enter,reseta as variáveis
                         bird = Bird {
                             pos: Vec2::new(screen_width() / 2., screen_height() / 2.),
                             vel: Vec2::new(0., 0.),
@@ -492,7 +490,7 @@ pub mod flappy_bird{
                 _ => {}
             }
     
-            let mut acc = -bird.vel / 100.; // Fricçãi
+            let mut acc = -bird.vel / 100.; // Fricção
 
             // Pausa o jogo
             if is_key_pressed(KeyCode::Escape) {
