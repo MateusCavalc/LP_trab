@@ -54,28 +54,6 @@ pub mod asteroids{
         fn draw(&mut self) {
             let rotation = self.rotation.to_radians();
     
-            //let v1 = Vec2::new(
-            //    self.position.x + (rotation.sin() * SHIP_HEIGHT / 2.),
-            //    self.position.y - (rotation.cos() * SHIP_HEIGHT / 2.),
-            //);
-    
-            //let v2 = Vec2::new(
-            //    self.position.x
-            //        - (rotation.cos() * SHIP_BASE / 2.)
-            //        - (rotation.sin() * SHIP_HEIGHT / 2.),
-            //    self.position.y - (rotation.sin() * SHIP_BASE / 2.)
-            //        + (rotation.cos() * SHIP_HEIGHT / 2.),
-            //);
-    
-            //let v3 = Vec2::new(
-            //    self.position.x + (rotation.cos() * SHIP_BASE / 2.)
-            //        - (rotation.sin() * SHIP_HEIGHT / 2.),
-            //    self.position.y
-            //        + (rotation.sin() * SHIP_BASE / 2.)
-            //        + (rotation.cos() * SHIP_HEIGHT / 2.),
-            //);
-    
-            //draw_triangle_lines(v1, v2, v3, SHIP_LINE_THICKNESS, SHIP_COLOR);
             draw_texture_ex(
                 self.ship_logo,
                 self.position.x - 25.,
@@ -152,13 +130,6 @@ pub mod asteroids{
     
         fn shoot(&mut self) {
             if get_time() - self.last_time_shot > BULLET_DELAY {
-
-
-                // let bullet_x = (self.position.x - 23.) + (self.rotation.sin() * 25.);
-                // let bullet_y = self.position.y - (self.rotation.cos() * 25.);
-
-                // let bullet_pos = Vec2::new(bullet_x, bullet_y);
-
                 self.bullets.push(Bullet::new(self.position, self.rotation));
                 self.last_time_shot = get_time();
             }
@@ -184,7 +155,6 @@ pub mod asteroids{
         }
     
         fn draw(&mut self, logo: Texture2D, rot: f32) {
-            // draw_circle(self.position.x + SHIP_BASE/2., self.position.y + SHIP_HEIGHT/2., BULLET_SIZE, BULLET_COLOR);
 
             draw_texture_ex(
                 logo,
@@ -231,20 +201,6 @@ pub mod asteroids{
         }
     
         fn draw(&self, logo: Texture2D) {
-            /* 12 - 25
-             * 9 - 12
-             * 6 - 9
-             * 3 - 6
-             */
-            //draw_poly_lines(
-            //    self.position.x,
-            //    self.position.y,
-            //    self.sides,
-            //    self.size,
-            //    self.rotation,
-            //    ASTEROID_LINE_THICKNESS,
-            //    ASTEROID_COLOR,
-            //)
     
             draw_texture_ex(
                 logo,
@@ -293,16 +249,7 @@ pub mod asteroids{
     
             self.size /= 2.;
             self.rotation *= 2.;
-    
-            // self.position.x = rand::gen_range(
-            //     self.position.x - (self.size * 4.),
-            //     self.position.x + (self.size * 4.),
-            // );
-            // self.position.y = rand::gen_range(
-            //     self.position.y - (self.size * 4.),
-            //     self.position.y + (self.size * 4.),
-            // );
-    
+   
             some
         }
     
@@ -373,6 +320,8 @@ pub mod asteroids{
     }
 
     pub(crate) async fn asteroids_game() -> bool{
+
+        // Textures
         let bg_texture: Texture2D = load_texture("res/asteroids_bg.png").await.unwrap();
         let win_bg_texture: Texture2D = load_texture("res/asteroids_lose_bg.png").await.unwrap();
         let lose_bg_texture: Texture2D = load_texture("res/asteroids_win_bg.png").await.unwrap();
@@ -380,15 +329,20 @@ pub mod asteroids{
         let cruzeiro_logo: Texture2D = load_texture("res/cruzeiro-logo.png").await.unwrap();
         let atletico_logo: Texture2D = load_texture("res/atletico-logo.png").await.unwrap();
         
+        // Criação do Ship
         let mut ship = Ship::new(cruzeiro_logo, bullet_texture);
+
+        // Criação dos asteroids
         let mut asteroids: Vec<_> = (0..ASTEROID_COUNT).map(|_| Asteroid::new()).collect();
+
+        // Verificador de colisão
         let mut collided = false;
 
         // Estado inicial do Asteroids
         let mut game_state = AsteroidsState::Startup;
 
         loop {
-            // desenha tela
+            // Desenha todos os elementos da tela
             draw_screen(bg_texture, atletico_logo, &mut ship, &asteroids);
 
             match game_state {
@@ -663,6 +617,7 @@ pub mod asteroids{
                 continue;
             }            
 
+            // Verifica as colisões entre bullets e asteroids para divisão em asteroids menores
             let mut indexes_to_remove = HashSet::new();
             let mut asteroids_to_add = vec![];
             let mut bullets_to_remove = vec![];
@@ -680,17 +635,20 @@ pub mod asteroids{
                     }
                 }
 
+                // Verificação de colisão entre ship e algum asteroid
                 if asteroid.collided(&ship.position) && !(ship.has_shield) {
                     collided = true;
                 }
             }
 
+            // Verificação para derrota
             if collided {
                 game_state = AsteroidsState::Lose;
                 continue;
                 
             }
 
+            // Remoção de elementos
             for (num_removed, i) in indexes_to_remove.into_iter().enumerate() {
                 asteroids.remove(i - num_removed);
             }
@@ -701,11 +659,13 @@ pub mod asteroids{
                 asteroids.push(i);
             }
 
+            // Verificação de vitória
             if asteroids.is_empty() {
                 game_state = AsteroidsState::Win;
                 continue;
             }
 
+            // Atualização de posição de elementos
             ship.mv();
             asteroids.iter_mut().for_each(|a| a.mv());
 

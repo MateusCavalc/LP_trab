@@ -133,24 +133,36 @@ pub mod flappy_bird{
         let rounded_box_texture: Texture2D = load_texture("res/rounded_box.png").await.unwrap();
         let trofeu_texture: Texture2D = load_texture("res/trofeu.png").await.unwrap();
 
-        let mut bird = Bird {//Criação da Bird
+        // Criação do Bird
+        let mut bird = Bird {
             pos: Vec2::new(screen_width() / 2., screen_height() / 2.),
             vel: Vec2::new(0., 0.),
         };
-        let mut pipes: Vec<Pipe> = vec![//Criação Inicial dos Pipes(duas duplas de pipes)
+
+        // Criação Inicial dos Pipes(duas duplas de pipes)
+        let mut pipes: Vec<Pipe> = vec![
             Pipe {x: screen_width(), y: 0.0-200.+40., w: 100.0, h: 300.0},
             Pipe {x: screen_width(), y: screen_height()-200.+40., w: 100.0, h: 300.0},
             Pipe {x: screen_width()+250., y: 0.0-200.+40., w: 100.0, h: 300.0},
             Pipe {x: screen_width()+250., y: screen_height()-200.+40., w: 100.0, h: 300.0},
         ];
-        let mut trofeu = Trophy {x: screen_width(), y: screen_height()/2.-160.0/2., w: 50., h: 160.};
-        let mut rng = rand::thread_rng(); //Para gerar um número randômico
-        let mut contador = 0;//contador serve para aumentar dificuldade a cada 10 pontos e ajuda na geração de novos pipes, igual pontuação porém zera após aumentar dificuldade, para não aumentar todo frame a dificuldade
-        let mut pontuacao = 0;//pontuacao do jogador
-        let mut dificuldade = 1.5; //velocidade dos pipes de irem para esquerda
-        let pontuacao_max = 4;//quanto maior,menor a distância
-        let distancia_pipe = 70.;//quanto maior,menor a distância
-        let vel_pipe_baixo = 0.5;//velocidade do pipe de ir para baixo e para cima quando passar de 20/40 pontos
+
+        // Criação do troféu
+        let mut trofeu = Trophy {
+            x: screen_width(), 
+            y: screen_height()/2.-160.0/2.,
+            w: 50.,
+            h: 160.
+        };
+
+        // Variáveis do jogo
+        let mut rng = rand::thread_rng(); // Para gerar um número randômico
+        let mut contador = 0; // contador para aumentar dificuldade
+        let mut pontuacao = 0; // pontuacao do jogador
+        let mut dificuldade = 1.5; // Velocidade dos pipes
+        let pontuacao_max = 4; // Pontuação máxima para spawn de troféu
+        let distancia_pipe = 70.; // Distância entre pipes
+        let vel_pipe_baixo = 0.5; // velocidade vertical dos pipes
 
         // Estado inicial do Flappy Bird
         let mut game_state = FlappyState::Startup;
@@ -489,8 +501,6 @@ pub mod flappy_bird{
 
                 _ => {}
             }
-    
-            let mut acc = -bird.vel / 100.; // Fricção
 
             // Pausa o jogo
             if is_key_pressed(KeyCode::Escape) {
@@ -499,38 +509,48 @@ pub mod flappy_bird{
                 continue;
             }
     
+            // Fricção
+            let mut acc = -bird.vel / 100.;
+    
             // Pulo
             if is_key_pressed(KeyCode::Space) {
                 acc = Vec2::new(0., -15.);
             }
             
-            acc.y += 0.5;//gravidade
+            // Gravidade
+            acc.y += 0.5;
             bird.vel += acc;
             if bird.vel.length() > 10. {
                 bird.vel = bird.vel.normalize() * 10.;
             }
             bird.pos += bird.vel;
     
-            if pontuacao > (pontuacao_max/2) {//1 dos 2 pipes descer
+            // Descer pipe do topo
+            if pontuacao > (pontuacao_max/2) {
                 if pipes[3].y < screen_height()-10.{
                     pipes[2].y += vel_pipe_baixo;
                     pipes[3].y += vel_pipe_baixo;
                 }
             }
     
-            if pontuacao > ((pontuacao_max*3)/4) {//segundo pipe subir
+            // Subir pipe de baixo
+            if pontuacao > ((pontuacao_max*3)/4) {
                 if pipes[0].y > -screen_height()+distancia_pipe+120.{
                     pipes[0].y -= vel_pipe_baixo;
                     pipes[1].y -= vel_pipe_baixo;
                 }
             }
 
-            let pipes_iter_mut = pipes.iter_mut();//iterar todos os pipes
-            let mut gameover_pipes = false;//variável para ajudar em dar o gameover
+            // Iterator para os pipes
+            let pipes_iter_mut = pipes.iter_mut();
 
-            for p in pipes_iter_mut {//desenhar os pipes, fazer eles irem paa esquerda e também colisão do pipe com o bird
+            // Auxílio para gameover
+            let mut gameover_pipes = false;
+            
+            // Desenhar pipes, atualização de posição e colisão com o bird
+            for p in pipes_iter_mut {
                 p.x = p.x - dificuldade as f32;
-                // draw_rectangle(p.x, p.y, p.w, p.h, BLACK);
+
                 // Desenha pipe do galo
                 draw_texture_ex(
                     galo_logo_texture,
@@ -543,18 +563,20 @@ pub mod flappy_bird{
                     },
                 );
 
+                // Verifica se houve colisão com o pipe atual
                 gameover_pipes = death_pipe(&bird ,p);
                 if gameover_pipes {
                     break;
                 }
             }
     
-            if contador % 10 == 0 && contador > 0{//aumentar velocidade dos pipes de irem para a esquerda a cada 10 pontos
+            // Aumenta velocidade de deslocamento dos pipes a cada 10 pontos
+            if contador % 10 == 0 && contador > 0{
                 dificuldade = dificuldade + 0.5;
                 contador = 0;
             }
     
-            //Geração de Novos Pipes, modifica os Pipes Originais para voltarem pro lado direito, funciona bem na tela pequena, tela grande fica ruim
+            // Geração de novos pipes e transposição dos pipes originais para a direita
             if (pipes[0].x < bird.pos.x - 80. || pipes[1].x < bird.pos.x - 80. || pipes[2].x < bird.pos.x - 80. || pipes[3].x < bird.pos.x - 80.) && pontuacao <= pontuacao_max {
                 if pontuacao < pontuacao_max{
                     let mut valor = rng.gen_range(0..(screen_height() as i64/2)+20);
@@ -568,7 +590,9 @@ pub mod flappy_bird{
                 }
                 contador+=1;
                 pontuacao+=1;
-            } 
+            }
+
+            // Verificação de pontuação para spawn de troféu
             if pontuacao >= pontuacao_max{
                 trofeu.x -= 0.8;
                 draw_texture_ex(
@@ -581,11 +605,14 @@ pub mod flappy_bird{
                         ..Default::default()
                     },
                 );
+
+                // Verificação para vitória
                 if hit_trophy(&bird ,&mut trofeu) {
                     game_state = FlappyState::Win;
                 }
             }
     
+            // Verificação para derrota
             if death_screen(&bird.pos) || gameover_pipes {
                 game_state = FlappyState::Lose;
             }

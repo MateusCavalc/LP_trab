@@ -78,6 +78,8 @@ async fn main() {
         clear_background(WHITE);
 
         match game_state {
+
+            // Estado Menu
             GameState::Menu => {
                 let text = "< Simulador de jogos - Linguagens de Programação 2023 >";
                 let text_size = measure_text(text, None, TEXT_SIZE, 1.0);
@@ -90,31 +92,45 @@ async fn main() {
                 );
 
             }
+
+            // Estado de jogo Asteroids
             GameState::Asteroids => {
+                // Tela de carregamento
                 clear_background(WHITE);
                 draw_loading_screen(x_midscreen, y_midscreen);
 
                 next_frame().await;
+
+                // Chamada do jogo Asteroids
                 loop {
                     if !asteroids_game().await {
                         break;
                     }
                 }
+
+                // Volta ao estado de Menu
                 game_state = GameState::Menu;
             }
+            
+            // Estado de jogo Flappy Bird
             GameState::FlappyBird => {
+                // Tela de carregamento
                 clear_background(WHITE);
                 draw_loading_screen(x_midscreen, y_midscreen);
 
                 next_frame().await;
 
+                // Chamada do jogo Asteroids
                 loop {
                     if !flappy_bird_game().await {
                         break;
                     }
                 }
+
+                // Volta ao estado de Menu
                 game_state = GameState::Menu;
             }
+            
         }
 
         let mut button_label = "Asteroids";
